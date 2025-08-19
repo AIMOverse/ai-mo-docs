@@ -35,10 +35,6 @@ export default defineConfig({
           link: '/overview/faq',
         },
         {
-          text: 'Principles',
-          link: '/overview/principles',
-        },
-        {
           text: 'Key Features',
           link: '/overview/features',
         },
