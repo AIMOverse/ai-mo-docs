@@ -1,0 +1,41 @@
+# Streaming Responses
+
+AiMo Network supports real-time streaming for immediate response delivery:
+
+## Server-Sent Events (SSE)
+
+When `stream: true`, responses are delivered as Server-Sent Events:
+
+```text
+data: {"choices":[{"delta":{"content":"Hello"}}]}
+
+data: {"choices":[{"delta":{"content":" there"}}]}
+
+data: [DONE]
+```
+
+## Handling Streaming in Your Application
+
+**JavaScript Example:**
+
+```javascript
+const eventSource = new EventSource('/chat/completions', {
+  headers: {
+    'Authorization': 'Bearer aimo-sk-dev-[your-api-key]'
+  }
+});
+
+eventSource.onmessage = function(event) {
+  if (event.data === '[DONE]') {
+    eventSource.close();
+    return;
+  }
+  
+  const data = JSON.parse(event.data);
+  const content = data.choices[0]?.delta?.content;
+  if (content) {
+    // Display the content chunk
+    console.log(content);
+  }
+};
+```

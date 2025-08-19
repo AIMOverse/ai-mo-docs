@@ -1,0 +1,66 @@
+# Error Handling
+
+## Common HTTP Status Codes
+
+- **200 OK**: Request successful
+- **400 Bad Request**: Invalid request format or parameters
+- **401 Unauthorized**: Invalid or expired API key
+- **402 Payment Required**: Insufficient balance in escrow account
+- **404 Not Found**: Provider or model not found
+- **422 Unprocessable Entity**: Request parameters invalid for model
+- **424 Failed Dependency**: Escrow account not set up
+- **429 Too Many Requests**: Rate limit exceeded or insufficient balance
+- **500 Internal Server Error**: Server error
+
+## Error Response Format
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance in escrow account",
+    "type": "insufficient_balance",
+    "code": 402
+  }
+}
+```
+
+## Handling Common Errors
+
+### Insufficient Balance
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance for estimated cost: 0.001 tokens",
+    "type": "insufficient_balance"
+  }
+}
+```
+
+**Solution**: Top up your escrow account with more tokens.
+
+### Invalid Provider
+
+```json
+{
+  "error": {
+    "message": "Invalid service provider Pubkey: [pubkey]",
+    "type": "invalid_provider"
+  }
+}
+```
+
+**Solution**: Verify the provider's Solana public key is correct.
+
+### Expired API Key
+
+```json
+{
+  "error": {
+    "message": "Expired",
+    "type": "unauthorized"
+  }
+}
+```
+
+**Solution**: Generate a new API key.

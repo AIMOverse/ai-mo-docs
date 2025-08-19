@@ -1,0 +1,56 @@
+# Support and Troubleshooting
+
+## Getting Help
+
+1. **Documentation**: Refer to this guide and API documentation
+2. **Node Operator**: Contact your AiMo Network node operator for technical support
+3. **Community**: Join the AiMo Network community forums and Discord
+
+## Debug Information
+
+For troubleshooting, collect:
+
+- Request/response details
+- API key scope and expiration
+- Solana wallet public key
+- Error messages and status codes
+- Timestamp of issues
+
+## Monitoring Your Usage
+
+Keep track of:
+
+- Token consumption per request
+- Daily/monthly spending
+- API key usage patterns
+- Model performance metrics
+
+## Quick Reference
+
+### Essential Commands
+
+```bash
+# Generate API key
+aimo keygen --tag prod --valid-for 30
+
+# Check wallet balance
+solana balance
+
+# View transaction history
+solana transaction-history [signature]
+```
+
+### API Endpoint Summary
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/chat/completions` | POST | Chat completion with models |
+| `/keys/generate` | POST | Generate new API key |
+| `/keys/verify` | POST | Verify API key validity |
+| `/keys/revoke` | POST | Revoke API key |
+
+### Model Format
+
+Always use the format: `provider_pubkey:model_name`
+
+Example: `9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo`

@@ -1,0 +1,99 @@
+# API Integration Examples
+
+**Remember**: All examples below must include proper `usage` objects in responses to ensure payment. See the Critical Payment Warning in the Service Integration section.
+
+## OpenAI-Compatible Service
+
+If your service is OpenAI-compatible, minimal changes are needed:
+
+```python
+from flask import Flask, request, jsonify, Response
+import openai
+import json
+
+app = Flask(__name__)
+
+@app.route('/chat/completions', methods=['POST'])
+def chat_completions():
+    data = request.json
+    
+    # Forward to your underlying model
+    response = openai.ChatCompletion.create(
+        model=data.get('model'),
+        messages=data.get('messages'),
+        stream=data.get('stream', False),
+        max_tokens=data.get('max_tokens'),
+        temperature=data.get('temperature', 0.7)
+    )
+    
+    if data.get('stream'):
+        def generate():
+            for chunk in response:
+                yield f"data: {json.dumps(chunk)}\n\n"
+            yield "data: [DONE]\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
+    
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
+
+## Custom Service Example
+
+For custom implementations, ensure you return proper usage information:
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/chat/completions', async (req, res) => {
+  const { model, messages, stream, max_tokens } = req.body;
+  
+  // Your model processing logic here
+  const response = await processRequest(messages, model);
+  
+  // Calculate token usage - CRITICAL for payment!
+  const usage = {
+    prompt_tokens: calculatePromptTokens(messages),
+    completion_tokens: calculateCompletionTokens(response),
+    total_tokens: 0
+  };
+  usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+  
+  if (stream) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    
+    // Stream response chunks
+    for (const chunk of response.chunks) {
+      res.write(`data: ${JSON.stringify({
+        choices: [{ delta: { content: chunk } }]
+      })}\n\n`);
+    }
+    
+    // Send final chunk with usage - REQUIRED for payment!
+    res.write(`data: ${JSON.stringify({
+      choices: [{ finish_reason: "stop" }],
+      usage
+    })}\n\n`);
+    
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } else {
+    res.json({
+      choices: [{ 
+        message: { role: "assistant", content: response.text },
+        finish_reason: "stop"
+      }],
+      usage
+    });
+  }
+});
+
+app.listen(8080, () => {
+  console.log('Service running on port 8080');
+});
+```

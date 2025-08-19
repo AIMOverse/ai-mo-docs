@@ -1,0 +1,25 @@
+# Proxy Features
+
+## Supported HTTP Methods
+
+The proxy supports all standard HTTP methods:
+
+- GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+
+## Header Forwarding
+
+- All headers from user requests are forwarded to your endpoint
+- Optional API key is added as `Authorization: Bearer <key>` header
+- Content-Type is automatically detected and preserved
+
+## Streaming Support
+
+- Automatic detection of Server-Sent Events (`text/event-stream`)
+- Real-time streaming of responses back to users
+- Proper stream completion signaling
+
+## Error Handling
+
+- HTTP errors are properly propagated to users
+- Connection failures are logged and handled gracefully
+- Unsupported methods return appropriate error responses

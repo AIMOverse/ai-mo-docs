@@ -1,0 +1,104 @@
+# AiMo Network - Service Provider Guide
+
+Welcome to the AiMo Network Service Provider Guide. This documentation will help you connect your AI model services to the AiMo Network, enabling you to offer your AI models to users in a decentralized marketplace.
+
+## Overview
+
+As a service provider on AiMo Network, you can:
+
+- Connect your existing AI model APIs to the network
+- Receive automatic payments for model usage
+- Serve users through a decentralized, peer-to-peer architecture
+- Maintain control over your models and pricing
+
+### How It Works
+
+1. **Register as a Provider**: Create your provider profile with model metadata and pricing (future: mint Provider NFT)
+2. **Connect Your Service**: Use the AiMo proxy to bridge your HTTP API to the network
+3. **Receive Requests**: The proxy forwards user requests to your service
+4. **Get Paid**: Automatic settlement of payments for usage through blockchain escrow
+5. **Withdraw Earnings**: Request router-signed transactions to withdraw your earnings
+
+## Getting Started
+
+### 1. Prerequisites
+
+Before connecting to AiMo Network, ensure you have:
+
+- A Solana wallet with some SOL for transaction fees
+- An HTTP-based AI model service (REST API)
+- Your service accessible via HTTP/HTTPS endpoints
+- The AiMo CLI tool installed (for proxy connection)
+- Access to the AiMo Network provider dashboard (for registration and payment management)
+
+### 2. Install AiMo CLI
+
+```bash
+cargo install aimo-cli
+```
+
+### 3. Create Your Provider Wallet
+
+Generate a Solana wallet that will represent your provider identity:
+
+```bash
+# Generate a new wallet for your provider
+solana-keygen new --outfile ~/.config/solana/provider-id.json
+
+# Check your provider's public key
+solana-keygen pubkey ~/.config/solana/provider-id.json
+```
+
+**Important**: Your provider's Solana public key will be your unique identifier on the network.
+
+### 4. Generate API Key
+
+Create an API key for your provider account:
+
+```bash
+aimo keygen --tag prod --valid-for 365 --scopes completion_model --id ~/.config/solana/provider-id.json
+```
+
+This generates an API key like: `aimo-sk-prod-[base58-encoded-key]`
+
+## Next Steps
+
+Once you have completed the initial setup, explore the following sections:
+
+- **Service Registration**: Register your service with AiMo Network
+- **Service Integration**: Connect your HTTP service to the network
+- **Proxy Features**: Understand the capabilities of the AiMo proxy
+- **Payment Integration**: Learn how payments and withdrawals work
+- **API Examples**: See integration examples for different service types
+- **Deployment**: Configure and deploy your service for production
+- **Pricing**: Set competitive pricing for your models
+- **Troubleshooting**: Debug common issues and get support
+- **Security**: Implement best practices for secure operation
+
+## Quick Reference
+
+### Essential Commands
+
+```bash
+# Install CLI
+cargo install aimo-cli
+
+# Generate provider wallet
+solana-keygen new --outfile ~/.config/solana/provider-id.json
+
+# Generate API key
+aimo keygen --tag prod --valid-for 365 --scopes completion_model
+
+# Start proxy
+aimo proxy --node-url "https://devnet.aimo.network" --secret-key "[key]" --endpoint-url "http://localhost:8080"
+```
+
+### Model ID Format
+
+When users request your models, they use: `your_provider_pubkey:model_name`
+
+Example: `9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo`
+
+---
+
+Welcome to AiMo Network! Start earning from your AI models today.

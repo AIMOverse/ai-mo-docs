@@ -1,0 +1,305 @@
+# Quick Start
+
+Get up and running with AiMo Network in just a few minutes.
+
+## What You'll Learn
+
+This quick start guide will help you:
+- Set up your Solana wallet
+- Generate your API key using the CLI
+- Make your first inference request
+- Understand the decentralized payment system
+
+## Prerequisites
+
+- Basic understanding of AI/ML models and APIs
+- Command line environment
+- Internet connection
+- Solana CLI tools (for wallet and payment management)
+
+## Step 1: Set Up Your Solana Wallet
+
+AiMo Network uses Solana for decentralized payments:
+
+1. **Install Solana CLI**: Follow [Solana's installation guide](https://docs.solana.com/cli/install-solana-cli-tools)
+2. **Generate a wallet**: 
+   ```bash
+   solana-keygen new
+   ```
+3. **Fund your wallet**: You'll need Solana tokens for the escrow account
+
+## Step 2: Install AiMo CLI
+
+Install the AiMo CLI tool for key generation and account management:
+
+```bash
+cargo install aimo-cli
+```
+
+## Step 3: Generate Your API Key
+
+Generate a cryptographically signed API key linked to your Solana wallet:
+
+```bash
+# Generate an API key valid for 90 days
+aimo keygen --tag dev --valid-for 90 --scopes completion_model
+```
+
+Your API key will look like this:
+```
+aimo-sk-dev-[base58-encoded-key]
+```
+
+## Step 4: Set Up Your Escrow Account (For Paid Models)
+
+For paid models, you need to deposit tokens into an escrow account:
+
+1. **Get the service token**: Contact your AiMo Network node operator for the token mint address
+2. **Top up your escrow**: Deposit tokens into your managed escrow account
+3. **Automatic payments**: The system will handle payments automatically based on usage
+
+:::note
+The escrow system locks estimated costs before requests and settles actual usage after completion.
+:::
+
+## Step 5: Make Your First Request
+
+### Using cURL
+
+```bash
+curl -X POST "https://devnet.aimo.network/api/v1/chat/completions" \
+  -H "Authorization: Bearer aimo-sk-dev-[your-api-key]" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo",
+    "messages": [
+      {"role": "user", "content": "Hello! Can you help me understand AiMo Network?"}
+    ],
+    "stream": false,
+    "max_tokens": 100
+  }'
+```
+
+### Using Python
+
+```python
+import requests
+import json
+
+url = "https://devnet.aimo.network/api/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer aimo-sk-dev-[your-api-key]",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "model": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo",
+    "messages": [
+        {"role": "user", "content": "Hello! Can you help me understand AiMo Network?"}
+    ],
+    "stream": False,
+    "max_tokens": 100
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.json())
+```
+
+### Using JavaScript/Node.js
+
+```javascript
+const response = await fetch('https://devnet.aimo.network/api/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer aimo-sk-dev-[your-api-key]',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo',
+    messages: [
+      { role: 'user', content: 'Hello! Can you help me understand AiMo Network?' }
+    ],
+    stream: false,
+    max_tokens: 100
+  })
+});
+
+const data = await response.json();
+console.log(data.choices[0].message.content);
+```
+
+## Step 6: Finding Model Providers
+
+To use AiMo Network, you need to know provider public keys and their available models:
+
+1. **Provider Directory**: Check with your AiMo Network node operator for available providers
+2. **Model Format**: Always use `provider_pubkey:model_name` format
+3. **Example**: `9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo`
+
+## Common Use Cases
+
+### Text Generation
+```python
+import requests
+
+response = requests.post("https://devnet.aimo.network/api/v1/chat/completions", 
+    headers={"Authorization": "Bearer aimo-sk-dev-[your-key]", "Content-Type": "application/json"},
+    json={
+        "model": "provider_pubkey:gpt-4",
+        "messages": [
+            {"role": "system", "content": "You are a helpful writing assistant."},
+            {"role": "user", "content": "Write a product description for a smart water bottle."}
+        ]
+    }
+)
+```
+
+### Code Generation
+```python
+response = requests.post("https://devnet.aimo.network/api/v1/chat/completions",
+    headers={"Authorization": "Bearer aimo-sk-dev-[your-key]", "Content-Type": "application/json"},
+    json={
+        "model": "provider_pubkey:code-model",
+        "messages": [
+            {"role": "user", "content": "Write a Python function to calculate fibonacci numbers"}
+        ]
+    }
+)
+```
+
+### Streaming Responses
+```python
+response = requests.post("https://devnet.aimo.network/api/v1/chat/completions",
+    headers={"Authorization": "Bearer aimo-sk-dev-[your-key]", "Content-Type": "application/json"},
+    json={
+        "model": "provider_pubkey:gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": "Tell me about AI"}],
+        "stream": True
+    },
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line.startswith(b'data: '):
+        data = line[6:].decode('utf-8')
+        if data == '[DONE]':
+            break
+        print(data)
+```
+
+## Understanding Costs and Payments
+
+AiMo Network uses a decentralized payment system with automatic escrow:
+
+### How Payments Work
+
+1. **Pre-Authorization**: Before each request, estimated cost is locked in your escrow
+2. **Actual Settlement**: After completion, you're charged only for actual token usage
+3. **Automatic Recovery**: Failed requests automatically recover locked tokens
+
+### Response Format
+
+Each request returns usage information for billing:
+
+```json
+{
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 25,
+    "completion_tokens": 75,
+    "total_tokens": 100
+  }
+}
+```
+
+### Payment Calculation
+
+- **Token Usage**: Based on input tokens (prompt) and output tokens (completion)
+- **Provider Pricing**: Each provider sets their own pricing per token
+- **Blockchain Settlement**: Payments are settled automatically on Solana
+
+## Error Handling
+
+Always implement proper error handling for common issues:
+
+```python
+import requests
+
+try:
+    response = requests.post("https://devnet.aimo.network/api/v1/chat/completions",
+        headers={"Authorization": "Bearer aimo-sk-dev-[your-key]", "Content-Type": "application/json"},
+        json={
+            "model": "provider_pubkey:gpt-4",
+            "messages": [{"role": "user", "content": "Hello"}]
+        }
+    )
+    
+    if response.status_code == 200:
+        data = response.json()
+        print(data['choices'][0]['message']['content'])
+    elif response.status_code == 401:
+        print("Error: Invalid or expired API key")
+    elif response.status_code == 402:
+        print("Error: Insufficient balance in escrow account")
+    elif response.status_code == 404:
+        print("Error: Provider or model not found")
+    else:
+        print(f"Error {response.status_code}: {response.text}")
+        
+except Exception as e:
+    print(f"Network error: {e}")
+```
+
+## Best Practices
+
+1. **Store API keys securely** - Use environment variables, never expose in code
+2. **Handle errors gracefully** - Implement retry logic with exponential backoff
+3. **Monitor escrow balance** - Keep sufficient tokens for your usage patterns
+4. **Use correct model format** - Always use `provider_pubkey:model_name` format
+5. **Implement streaming** - Use streaming for better user experience with longer responses
+
+## Next Steps
+
+Now that you've made your first request:
+
+1. **[Learn about authentication](/user-guide/authentication)** - Understand API key generation and management
+2. **[Explore API usage](/user-guide/api-usage)** - Learn about the full API capabilities
+3. **[Set up payments](/user-guide/payments)** - Understand the escrow system and billing
+4. **[Implement streaming](/user-guide/streaming)** - Add real-time response streaming
+5. **[Handle errors](/user-guide/error-handling)** - Robust error handling strategies
+6. **[Integration examples](/user-guide/integrations)** - OpenAI library compatibility and more
+7. **[Read the user guide](/user-guide)** - Comprehensive documentation
+
+## Troubleshooting
+
+### Common Issues
+
+**Authentication Error (401)**
+- Verify your API key format: `aimo-sk-dev-[base58-encoded-key]`
+- Check that your API key hasn't expired
+- Ensure it's included in the Authorization header
+
+**Insufficient Balance Error (402)**
+- Your escrow account has insufficient tokens
+- Top up your escrow account with more tokens
+- Contact your node operator for payment token details
+
+**Provider/Model Not Found (404)**
+- Verify the provider's Solana public key is correct
+- Ensure you're using the format: `provider_pubkey:model_name`
+- Check with your node operator for available providers
+
+**Failed Dependency (424)**
+- Your escrow account isn't set up properly
+- Set up your escrow account with the required payment tokens
+
+### Getting Help
+
+- **Documentation**: Browse the user guide and provider guide
+- **Node Operator**: Contact your AiMo Network node operator for technical support
+- **Community**: Join AiMo Network community forums
+- **CLI Help**: Run `aimo --help` for command assistance
+
+---
+
+**Congratulations!** 🎉 You've successfully made your first request to AiMo Network. Ready to build something amazing?

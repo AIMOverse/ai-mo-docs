@@ -1,0 +1,76 @@
+# Troubleshooting
+
+## Common Issues
+
+### Proxy Connection Failed
+
+```text
+Error: Failed to connect to WebSocket
+```
+
+- Check if AiMo Network node is accessible
+- Verify your API key is valid and not expired
+- Ensure network connectivity
+
+### Service Registration Failed
+
+```text
+HTTP 401: Invalid signature for metadata
+```
+
+- Verify you signed the metadata with the correct wallet
+- Ensure the provider ID in metadata matches your wallet's public key
+- Check the signature format
+- **Recommended**: Use the provider dashboard for easier registration
+
+### No Requests Received
+
+```text
+WebSocket connection established but no requests
+```
+
+- Verify your provider is registered successfully
+- Check if users can discover your models
+- Ensure your pricing is competitive
+- Confirm your Provider NFT is properly minted (when implemented)
+
+### Not Receiving Payment for Requests
+
+```text
+Requests processed but no earnings recorded
+```
+
+- **Most Common Cause**: Missing or malformed `usage` object in responses
+- Verify your service returns proper `usage` object with `prompt_tokens`, `completion_tokens`, and `total_tokens`
+- For streaming responses, ensure the `usage` object is in the final chunk before `[DONE]`
+- Check your token counting logic is accurate
+- Test your responses match the required OpenAI-compatible format
+- Review the Critical Payment Warning section in Service Integration
+
+### Payment/Withdrawal Issues
+
+```text
+Unable to withdraw earnings
+```
+
+- Ensure you're using the correct process: request router-signed transaction, then co-sign
+- **Recommended**: Use the provider dashboard for simplified withdrawal process
+- Verify your provider account has sufficient balance
+- Check that your wallet is properly connected
+
+## Debug Mode
+
+Enable detailed logging:
+
+```bash
+RUST_LOG=debug aimo proxy \
+  --node-url "https://devnet.aimo.network" \
+  --secret-key "aimo-sk-prod-[your-key]" \
+  --endpoint-url "http://localhost:8080"
+```
+
+## Support Channels
+
+- **Documentation**: Refer to this guide and API documentation
+- **Community**: Join AiMo Network Discord and forums
+- **Technical Support**: Contact the AiMo Network team for integration help

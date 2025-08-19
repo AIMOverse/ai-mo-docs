@@ -1,0 +1,61 @@
+# Configuration and Deployment
+
+## Production Deployment
+
+For production deployment:
+
+1. **Use Production Mainnet**: Point to mainnet AiMo Network nodes
+2. **Secure Your Wallet**: Store provider wallet securely (consider hardware wallets)
+3. **Monitor Service Health**: Implement health checks and monitoring
+4. **Scale Your Infrastructure**: Ensure your service can handle concurrent requests
+5. **Set Appropriate Pricing**: Price competitively based on your costs
+
+## Environment Variables
+
+Configure the proxy using environment variables:
+
+```bash
+export AIMO_NODE_URL="https://mainnet.aimo.network"
+export AIMO_SECRET_KEY="aimo-sk-prod-[your-key]"
+export AIMO_ENDPOINT_URL="http://localhost:8080"
+export AIMO_API_KEY="your-service-api-key"
+
+aimo proxy \
+  --node-url "$AIMO_NODE_URL" \
+  --secret-key "$AIMO_SECRET_KEY" \
+  --endpoint-url "$AIMO_ENDPOINT_URL" \
+  --api-key "$AIMO_API_KEY"
+```
+
+## Docker Deployment
+
+Example Dockerfile for containerized deployment:
+
+```dockerfile
+FROM rust:latest
+
+# Install AiMo CLI
+RUN cargo install aimo-cli
+
+# Copy your service files
+COPY . /app
+WORKDIR /app
+
+# Install your service dependencies
+RUN npm install  # or pip install, etc.
+
+# Start both your service and the proxy
+CMD ["sh", "-c", "npm start & aimo proxy --node-url $AIMO_NODE_URL --secret-key $AIMO_SECRET_KEY --endpoint-url http://localhost:8080"]
+```
+
+## Health Monitoring
+
+Monitor your service with health checks:
+
+```bash
+# Check proxy connection
+curl -f http://localhost:8080/health || exit 1
+
+# Monitor AiMo Network connectivity
+tail -f /var/log/aimo-proxy.log | grep "WebSocket connection established"
+```

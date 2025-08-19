@@ -1,0 +1,1507 @@
+# AiMo Network
+
+> Documentation for the AiMo Network - AI Model Orchestration Platform
+
+## API Reference
+
+Complete reference documentation for the AiMo Network API.
+
+### Base URL
+
+All API requests should be made to:
+
+```
+https://api.aimo.network/v1
+```
+
+### Authentication
+
+AiMo Network uses API keys for authentication. Include your API key in the Authorization header:
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+Get your API key from the [AiMo Network Dashboard](https://dashboard.aimo.network).
+
+### Rate Limits
+
+API rate limits vary by subscription tier:
+
+* **Free Tier**: 100 requests per minute
+* **Pro Tier**: 1,000 requests per minute
+* **Enterprise**: Custom limits
+
+Rate limit headers are included in all responses:
+
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1234567890
+```
+
+### API Sections
+
+#### Core APIs
+
+* [Authentication](/api-reference/authentication) - API key management and security
+* [Models API](/api-reference/models) - Discover and query available models
+* [Inference API](/api-reference/inference) - Make inference requests to AI models
+
+#### Management APIs
+
+* [Billing API](/api-reference/billing) - Usage tracking and billing information
+* [Webhooks](/api-reference/webhooks) - Event notifications and callbacks
+
+### Common Request Patterns
+
+#### Chat Completion
+
+Most language models support the OpenAI-compatible chat completion format:
+
+```bash
+curl -X POST https://api.aimo.network/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ],
+    "max_tokens": 100
+  }'
+```
+
+#### Image Generation
+
+Generate images from text descriptions:
+
+```bash
+curl -X POST https://api.aimo.network/v1/images/generations \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "dall-e-3",
+    "prompt": "A beautiful sunset over the ocean",
+    "size": "1024x1024"
+  }'
+```
+
+#### Embeddings
+
+Create vector embeddings for text:
+
+```bash
+curl -X POST https://api.aimo.network/v1/embeddings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-ada-002",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+
+### Response Format
+
+All API responses follow a consistent format:
+
+#### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data here
+  },
+  "meta": {
+    "request_id": "req_123456789",
+    "model": "gpt-4",
+    "provider": "openai",
+    "latency_ms": 1234
+  }
+}
+```
+
+#### Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "invalid_request",
+    "message": "The request was invalid",
+    "details": "Missing required parameter: model"
+  },
+  "meta": {
+    "request_id": "req_123456789"
+  }
+}
+```
+
+### Error Codes
+
+Common error codes and their meanings:
+
+| Code                    | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| `invalid_request`       | The request was malformed or missing required parameters |
+| `authentication_failed` | Invalid or missing API key                               |
+| `rate_limit_exceeded`   | Too many requests - see rate limiting section            |
+| `model_not_found`       | The specified model does not exist                       |
+| `insufficient_credits`  | Account has insufficient credits for the request         |
+| `model_unavailable`     | The model is temporarily unavailable                     |
+| `internal_error`        | An unexpected error occurred on our servers              |
+
+### SDKs and Libraries
+
+Official SDKs are available for popular programming languages:
+
+* **Python**: `pip install aimo-network`
+* **JavaScript/TypeScript**: `npm install @aimo/sdk`
+* **Go**: `go get github.com/aimo-network/go-sdk`
+* **Rust**: `cargo add aimo-network`
+
+### OpenAPI Specification
+
+Download the complete OpenAPI specification:
+
+* [OpenAPI 3.0 JSON](https://api.aimo.network/openapi.json)
+* [OpenAPI 3.0 YAML](https://api.aimo.network/openapi.yaml)
+
+### Testing
+
+Test the API using our interactive playground:
+
+* [API Playground](https://dashboard.aimo.network/playground)
+* [Postman Collection](https://documenter.getpostman.com/view/aimo-network)
+
+### Support
+
+Need help with the API?
+
+* **Documentation**: You're reading it!
+* **Community**: Join our Discord server
+* **Email**: [api-support@aimo.network](mailto\:api-support@aimo.network)
+* **Status**: Check API status at [status.aimo.network](https://status.aimo.network)
+
+
+## Getting Started
+
+Welcome to AiMo Network! This guide will help you get started with the platform and make your first API call.
+
+### What is AiMo Network?
+
+AiMo Network is a decentralized AI model orchestration platform that provides:
+
+* **Unified API access** to hundreds of AI models
+* **Competitive pricing** through marketplace dynamics
+* **High availability** with automatic failover
+* **Enterprise security** and compliance
+* **Rich analytics** and monitoring
+
+### Quick Setup
+
+#### 1. Sign Up
+
+Create your free account at [aimo.network](https://aimo.network/signup).
+
+#### 2. Get Your API Key
+
+After signing up:
+
+1. Go to your [dashboard](https://dashboard.aimo.network)
+2. Navigate to API Keys
+3. Click "Create New Key"
+4. Copy your API key (keep it secure!)
+
+#### 3. Test Your Setup
+
+Make a quick test request using curl:
+
+```bash
+curl -X POST https://api.aimo.network/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "Hello, AiMo!"}],
+    "max_tokens": 50
+  }'
+```
+
+### Choose Your Path
+
+#### I'm a User 👤
+
+Want to integrate AI models into your application?
+
+* [Quick Start](/quick-start) - Get running in 5 minutes
+* [User Guide](/user-guide) - Complete user documentation
+* [Examples](/examples/basic-usage) - Practical code examples
+
+#### I'm a Provider 🏭
+
+Want to monetize your AI models?
+
+* [Provider Guide](/provider-guide) - Learn how to become a provider
+* [Model Registration](/provider-guide/model-registration) - List your models
+* [Pricing & Rewards](/provider-guide/pricing) - Understand the economics
+
+#### I'm a Developer 💻
+
+Need technical details and API reference?
+
+* [API Reference](/api-reference) - Complete API documentation
+* [Authentication](/api-reference/authentication) - Security and API keys
+* [SDKs & Tools](/installation) - Official libraries and tools
+
+### Popular Models
+
+Get started with these popular models:
+
+| Model         | Type     | Use Case                      | Cost             |
+| ------------- | -------- | ----------------------------- | ---------------- |
+| GPT-4         | Language | Chat, completion, reasoning   | $0.03/1K tokens  |
+| GPT-3.5 Turbo | Language | Fast chat and completion      | $0.002/1K tokens |
+| DALL-E 3      | Image    | High-quality image generation | $0.040/image     |
+| Claude-3      | Language | Analysis, writing, coding     | $0.015/1K tokens |
+| Llama 2       | Language | Open-source alternative       | $0.001/1K tokens |
+
+### Community & Support
+
+* **Discord**: Join our [developer community](https://discord.gg/aimo-network)
+* **GitHub**: Check out our [open source repos](https://github.com/aimo-network)
+* **Docs**: You're reading them!
+* **Support**: Email [support@aimo.network](mailto\:support@aimo.network)
+
+### What's Next?
+
+Choose your next step based on what you want to do:
+
+1. **Make your first API call**: [Quick Start](/quick-start)
+2. **Install an SDK**: [Installation Guide](/installation)
+3. **Explore the API**: [API Reference](/api-reference)
+4. **See examples**: [Basic Usage](/examples/basic-usage)
+5. **Learn about architecture**: [System Overview](/overview/architecture)
+
+***
+
+Ready to build with AI? Let's get started! 🚀
+
+
+## Installation
+
+Learn how to install and configure AiMo Network SDKs and tools.
+
+### API Access
+
+AiMo Network is primarily a RESTful API service. No installation is required for basic usage - you can start making HTTP requests immediately with your API key.
+
+### Official SDKs
+
+#### Python SDK
+
+Install the Python SDK via pip:
+
+```bash
+pip install aimo-network
+```
+
+Basic usage:
+
+```python
+from aimo import AimoClient
+
+client = AimoClient(api_key="your_api_key")
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+#### JavaScript/TypeScript SDK
+
+Install via npm:
+
+```bash
+npm install @aimo/sdk
+```
+
+Basic usage:
+
+```javascript
+import { AimoClient } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+console.log(response.choices[0].message.content);
+```
+
+### CLI Tool
+
+Install the AiMo CLI for command-line access:
+
+```bash
+npm install -g @aimo/cli
+```
+
+Configure your API key:
+
+```bash
+aimo auth login
+```
+
+### Environment Setup
+
+Create a `.env` file in your project:
+
+```bash
+AIMO_API_KEY=your_api_key_here
+AIMO_BASE_URL=https://api.aimo.network/v1
+```
+
+### Verification
+
+Test your installation:
+
+```bash
+# Using CLI
+aimo models list
+
+# Using curl
+curl -H "Authorization: Bearer $AIMO_API_KEY" \
+  https://api.aimo.network/v1/models
+```
+
+### Next Steps
+
+* [Quick Start](/quick-start) - Make your first API call
+* [Authentication](/user-guide/authentication) - Learn about API keys and security
+
+
+## What is AiMo Network?
+
+AiMo Network is a decentralized AI model orchestration platform that connects AI model providers with users, creating an efficient marketplace for AI inference services.
+
+### Core Concept
+
+AiMo Network acts as a bridge between:
+
+* **Users** who need AI model inference capabilities
+* **Providers** who host and serve AI models
+* **Developers** who build applications using AI models
+
+### Key Benefits
+
+#### For Users
+
+* **Access to diverse models**: Choose from hundreds of AI models from different providers
+* **Cost-effective**: Competitive pricing through marketplace dynamics
+* **Reliable service**: Built-in redundancy and automatic failover
+* **Simple integration**: Unified API for all models
+
+#### For Providers
+
+* **Monetize your models**: Earn rewards by serving inference requests
+* **Easy onboarding**: Simple model registration process
+* **Transparent pricing**: Set your own rates and see real-time demand
+* **Performance insights**: Detailed analytics on model usage
+
+#### For Developers
+
+* **Unified interface**: One API to access hundreds of models
+* **High availability**: Automatic load balancing and failover
+* **Scalable infrastructure**: Handle any workload size
+* **Developer-friendly**: Comprehensive SDKs and documentation
+
+### How It Works
+
+1. **Model Discovery**: Browse available models by capability, price, and performance
+2. **Request Routing**: AiMo intelligently routes requests to optimal providers
+3. **Inference Execution**: Models process requests and return results
+4. **Billing & Rewards**: Transparent usage-based billing and provider rewards
+
+### Supported Model Types
+
+* **Large Language Models (LLMs)**: GPT, Claude, Llama, and more
+* **Image Generation**: DALL-E, Midjourney, Stable Diffusion
+* **Code Generation**: Codex, CodeT5, GitHub Copilot
+* **Embedding Models**: OpenAI Embeddings, Sentence Transformers
+* **Multimodal Models**: GPT-4V, Claude Vision, LLaVA
+
+### Getting Started
+
+Ready to start using AiMo Network? Choose your path:
+
+* [Quick Start](/quick-start) - Get up and running in 5 minutes
+* [User Guide](/user-guide) - Comprehensive guide for model consumers
+* [Provider Guide](/provider-guide) - Learn how to become a model provider
+
+### Architecture Overview
+
+Learn more about how AiMo Network is built:
+
+* [Architecture](/overview/architecture) - Technical architecture details
+* [Key Features](/overview/features) - Detailed feature explanations
+
+
+## Provider Guide
+
+Welcome to the AiMo Network Provider Guide! Learn how to monetize your AI models by joining our decentralized marketplace.
+
+### Become a Provider
+
+AiMo Network enables AI model owners and operators to monetize their infrastructure by serving inference requests to users worldwide.
+
+#### Why Become a Provider?
+
+* **Monetize your models**: Earn revenue from every inference request
+* **Global reach**: Access users from around the world
+* **Transparent pricing**: Set your own rates and see real-time demand
+* **Easy integration**: Simple APIs for model registration and hosting
+* **Performance insights**: Detailed analytics on usage and earnings
+
+### Getting Started
+
+#### Requirements
+
+Before becoming a provider, ensure you have:
+
+* **AI models** that you own or have rights to commercialize
+* **Hosting infrastructure** capable of serving inference requests
+* **API endpoints** that can handle HTTP requests
+* **Monitoring capabilities** for performance and availability
+
+#### Onboarding Process
+
+1. **Application**: Submit your provider application
+2. **Model review**: Our team reviews your models for quality and safety
+3. **Integration**: Implement our provider API endpoints
+4. **Testing**: Complete integration testing and performance validation
+5. **Go live**: Start receiving and fulfilling user requests
+
+### What You'll Learn
+
+This guide covers everything you need to know as a provider:
+
+#### Setup & Registration
+
+* [Model Registration](/provider-guide/model-registration) - How to list your models
+* API integration requirements
+* Performance and availability standards
+
+#### Operations
+
+* [Performance Monitoring](/provider-guide/monitoring) - Track your model performance
+* Request handling and scaling
+* Error handling and debugging
+
+#### Business
+
+* [Pricing & Rewards](/provider-guide/pricing) - Set prices and earn rewards
+* Market dynamics and demand patterns
+* [Best Practices](/provider-guide/best-practices) - Optimize your operations
+
+### Provider Types
+
+AiMo Network supports various types of providers:
+
+#### Independent Providers
+
+* Individual developers with custom models
+* Small teams with specialized models
+* Research organizations sharing models
+
+#### Enterprise Providers
+
+* Large model hosting companies
+* Cloud service providers
+* Enterprise AI teams
+
+#### Model Creators
+
+* Original model developers and researchers
+* Companies with proprietary models
+* Open source model maintainers
+
+### Supported Model Types
+
+You can provide various types of AI models:
+
+#### Language Models
+
+* **Chat/Completion models** (GPT-style)
+* **Code generation models**
+* **Translation models**
+* **Summarization models**
+
+#### Vision Models
+
+* **Image generation models**
+* **Image analysis models**
+* **OCR and document processing**
+* **Video analysis models**
+
+#### Specialized Models
+
+* **Embedding models**
+* **Audio processing models**
+* **Domain-specific models** (medical, financial, etc.)
+* **Custom fine-tuned models**
+
+### Technical Requirements
+
+#### API Specifications
+
+* **OpenAI-compatible API** preferred but not required
+* **Custom API formats** supported with adapter configuration
+* **Streaming responses** for real-time applications
+* **Batch processing** capabilities for efficiency
+
+#### Performance Standards
+
+* **Latency requirements** based on model type and size
+* **Availability targets** (99.5% minimum uptime)
+* **Throughput expectations** for concurrent requests
+* **Quality metrics** and user satisfaction scores
+
+#### Infrastructure
+
+* **Scalable hosting** to handle variable demand
+* **Global deployment** options for reduced latency
+* **Monitoring and alerting** for proactive issue resolution
+* **Security measures** for data protection
+
+### Revenue Model
+
+#### Pricing Structure
+
+* **Per-request pricing** based on model complexity
+* **Dynamic pricing** that adjusts with demand
+* **Volume discounts** for high-usage customers
+* **Performance bonuses** for high-quality service
+
+#### Payment Terms
+
+* **Weekly payouts** via bank transfer or cryptocurrency
+* **Transparent fee structure** with no hidden costs
+* **Detailed revenue reporting** with usage analytics
+* **Tax documentation** and compliance support
+
+### Provider Benefits
+
+#### Technical Support
+
+* **Dedicated provider support team**
+* **Integration assistance** and technical guidance
+* **Performance optimization** recommendations
+* **API updates** and backwards compatibility
+
+#### Marketing & Discovery
+
+* **Model marketplace listing** with detailed descriptions
+* **Performance badges** for high-quality providers
+* **Featured provider** opportunities
+* **User review system** for reputation building
+
+#### Analytics & Insights
+
+* **Real-time usage dashboards**
+* **Revenue tracking and forecasting**
+* **User feedback and ratings**
+* **Market demand analysis**
+
+### Getting Help
+
+Provider support resources:
+
+* **Provider Portal**: Manage your models and view analytics
+* **Technical Documentation**: Detailed integration guides
+* **Provider Community**: Connect with other providers
+* **Support Team**: Dedicated provider success managers
+
+### Next Steps
+
+Ready to become a provider? Here's your roadmap:
+
+1. **[Apply to become a provider](https://aimo.network/providers/apply)**
+2. **Review the [Model Registration](/provider-guide/model-registration) requirements**
+3. **Check out [Best Practices](/provider-guide/best-practices) for success tips**
+4. **Join our provider community for support and networking**
+
+Questions? Contact our provider team at [providers@aimo.network](mailto\:providers@aimo.network)
+
+
+## Quick Start
+
+Get up and running with AiMo Network in minutes.
+
+### Prerequisites
+
+* Basic understanding of AI/ML models
+* API key from AiMo Network (sign up at [aimo.network](https://aimo.network))
+
+### 1. Authentication
+
+First, obtain your API key from the AiMo Network dashboard:
+
+```bash
+export AIMO_API_KEY="your_api_key_here"
+```
+
+### 2. Make Your First Request
+
+Use curl to make a simple inference request:
+
+```bash
+curl -X POST https://api.aimo.network/v1/inference \
+  -H "Authorization: Bearer $AIMO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ]
+  }'
+```
+
+### 3. Explore Available Models
+
+List all available models:
+
+```bash
+curl -X GET https://api.aimo.network/v1/models \
+  -H "Authorization: Bearer $AIMO_API_KEY"
+```
+
+### Next Steps
+
+* [User Guide](/user-guide) - Learn how to use AiMo Network effectively
+* [API Reference](/api-reference) - Complete API documentation
+* [Examples](/examples/basic-usage) - See practical examples
+
+
+## User Guide
+
+Welcome to the AiMo Network User Guide! This comprehensive guide will help you get the most out of the AiMo Network platform.
+
+### What You'll Learn
+
+This guide covers everything you need to know as a user of AiMo Network:
+
+* How to discover and select the right AI models for your needs
+* Making your first API requests and handling responses
+* Authentication and security best practices
+* Managing billing, usage, and costs
+* Advanced features and optimization techniques
+
+### Quick Navigation
+
+#### Getting Started
+
+* [Model Discovery](/user-guide/model-discovery) - Find the perfect model for your use case
+* [Authentication](/user-guide/authentication) - Set up secure API access
+* [Making Requests](/user-guide/making-requests) - Learn the API basics
+
+#### Managing Your Account
+
+* [Billing & Usage](/user-guide/billing) - Understand pricing and manage costs
+* Account settings and team management
+* Usage analytics and monitoring
+
+#### Advanced Topics
+
+* Performance optimization
+* Error handling and debugging
+* Integration patterns and best practices
+
+### Prerequisites
+
+Before you begin, make sure you have:
+
+1. **An AiMo Network account** - [Sign up here](https://aimo.network/signup) if you haven't already
+2. **An API key** - Generate one from your dashboard after signing up
+3. **Basic API knowledge** - Familiarity with HTTP requests and JSON
+
+### Your First Steps
+
+If you're new to AiMo Network, we recommend following this path:
+
+1. **[Quick Start](/quick-start)** - Get up and running in 5 minutes
+2. **[Model Discovery](/user-guide/model-discovery)** - Learn how to find models
+3. **[Making Requests](/user-guide/making-requests)** - Master the API basics
+4. **[Authentication](/user-guide/authentication)** - Secure your integration
+
+### Common Use Cases
+
+AiMo Network supports a wide variety of AI applications:
+
+#### Text Generation & Chat
+
+* Chatbots and conversational AI
+* Content creation and copywriting
+* Code generation and assistance
+* Language translation
+
+#### Image & Media
+
+* Image generation from text
+* Image analysis and description
+* Photo editing and enhancement
+* Video content analysis
+
+#### Data & Analytics
+
+* Text embeddings for search
+* Sentiment analysis
+* Data extraction and summarization
+* Recommendation systems
+
+#### Development Tools
+
+* Code completion and review
+* API documentation generation
+* Test case generation
+* Bug detection and fixing
+
+### Getting Help
+
+Need assistance? We're here to help:
+
+* **Documentation**: Comprehensive guides and API reference
+* **Community**: Join our Discord server for peer support
+* **Support**: Email [support@aimo.network](mailto\:support@aimo.network) for technical issues
+* **Status Page**: Check service status at status.aimo.network
+
+### Best Practices
+
+To get the most out of AiMo Network:
+
+1. **Start small** - Begin with simple requests to understand the API
+2. **Monitor usage** - Keep track of your costs and usage patterns
+3. **Handle errors gracefully** - Implement proper error handling and retries
+4. **Optimize for performance** - Use caching and batching where appropriate
+5. **Stay updated** - Follow our changelog for new features and improvements
+
+Ready to dive deeper? Choose your next topic from the sidebar navigation!
+
+
+## Basic Usage Examples
+
+Learn how to use AiMo Network with practical examples in different programming languages.
+
+### Prerequisites
+
+Before running these examples, make sure you have:
+
+1. An AiMo Network account and API key
+2. Your chosen programming language environment set up
+3. The AiMo SDK installed (optional but recommended)
+
+### Text Generation
+
+#### Python
+
+Using the Python SDK:
+
+```python
+from aimo import AimoClient
+
+# Initialize the client
+client = AimoClient(api_key="your_api_key_here")
+
+# Generate text
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": "Write a short poem about AI"}
+    ],
+    max_tokens=100
+)
+
+print(response.choices[0].message.content)
+```
+
+Using requests library:
+
+```python
+import requests
+
+url = "https://api.aimo.network/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer your_api_key_here",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "model": "gpt-4",
+    "messages": [
+        {"role": "user", "content": "Write a short poem about AI"}
+    ],
+    "max_tokens": 100
+}
+
+response = requests.post(url, headers=headers, json=data)
+result = response.json()
+
+print(result["choices"][0]["message"]["content"])
+```
+
+#### JavaScript/TypeScript
+
+Using the JavaScript SDK:
+
+```javascript
+import { AimoClient } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+async function generateText() {
+  const response = await client.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      { role: 'user', content: 'Write a short poem about AI' }
+    ],
+    max_tokens: 100
+  });
+
+  console.log(response.choices[0].message.content);
+}
+
+generateText();
+```
+
+Using fetch:
+
+```javascript
+const response = await fetch('https://api.aimo.network/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer your_api_key_here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'gpt-4',
+    messages: [
+      { role: 'user', content: 'Write a short poem about AI' }
+    ],
+    max_tokens: 100
+  })
+});
+
+const result = await response.json();
+console.log(result.choices[0].message.content);
+```
+
+#### cURL
+
+```bash
+curl -X POST https://api.aimo.network/v1/chat/completions \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [
+      {"role": "user", "content": "Write a short poem about AI"}
+    ],
+    "max_tokens": 100
+  }'
+```
+
+### Image Generation
+
+#### Python
+
+```python
+from aimo import AimoClient
+
+client = AimoClient(api_key="your_api_key_here")
+
+response = client.images.generate(
+    model="dall-e-3",
+    prompt="A futuristic cityscape with flying cars",
+    size="1024x1024",
+    quality="standard",
+    n=1
+)
+
+# Get the image URL
+image_url = response.data[0].url
+print(f"Generated image: {image_url}")
+
+# Download the image
+import requests
+from PIL import Image
+from io import BytesIO
+
+img_response = requests.get(image_url)
+img = Image.open(BytesIO(img_response.content))
+img.save("generated_image.png")
+```
+
+#### JavaScript
+
+```javascript
+import { AimoClient } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+async function generateImage() {
+  const response = await client.images.generate({
+    model: 'dall-e-3',
+    prompt: 'A futuristic cityscape with flying cars',
+    size: '1024x1024',
+    quality: 'standard',
+    n: 1
+  });
+
+  const imageUrl = response.data[0].url;
+  console.log(`Generated image: ${imageUrl}`);
+
+  // Download the image (Node.js)
+  const fs = require('fs');
+  const https = require('https');
+  
+  const file = fs.createWriteStream('generated_image.png');
+  https.get(imageUrl, (response) => {
+    response.pipe(file);
+  });
+}
+
+generateImage();
+```
+
+### Text Embeddings
+
+#### Python
+
+```python
+from aimo import AimoClient
+import numpy as np
+
+client = AimoClient(api_key="your_api_key_here")
+
+# Generate embeddings for similarity search
+texts = [
+    "The weather is beautiful today",
+    "It's sunny and warm outside",
+    "I love pizza and pasta",
+    "Italian food is delicious"
+]
+
+embeddings = []
+for text in texts:
+    response = client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+    embeddings.append(response.data[0].embedding)
+
+# Calculate similarity between first two texts
+embedding1 = np.array(embeddings[0])
+embedding2 = np.array(embeddings[1])
+
+similarity = np.dot(embedding1, embedding2) / (
+    np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+)
+
+print(f"Similarity between texts: {similarity:.3f}")
+```
+
+#### JavaScript
+
+```javascript
+import { AimoClient } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+async function generateEmbeddings() {
+  const texts = [
+    "The weather is beautiful today",
+    "It's sunny and warm outside",
+    "I love pizza and pasta",
+    "Italian food is delicious"
+  ];
+
+  const embeddings = [];
+  
+  for (const text of texts) {
+    const response = await client.embeddings.create({
+      model: 'text-embedding-ada-002',
+      input: text
+    });
+    embeddings.push(response.data[0].embedding);
+  }
+
+  // Calculate cosine similarity
+  function cosineSimilarity(a, b) {
+    const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
+    const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+    const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+    return dotProduct / (magnitudeA * magnitudeB);
+  }
+
+  const similarity = cosineSimilarity(embeddings[0], embeddings[1]);
+  console.log(`Similarity between texts: ${similarity.toFixed(3)}`);
+}
+
+generateEmbeddings();
+```
+
+### Streaming Responses
+
+#### Python
+
+```python
+from aimo import AimoClient
+
+client = AimoClient(api_key="your_api_key_here")
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": "Tell me a story about a robot"}
+    ],
+    stream=True
+)
+
+print("Story: ", end="")
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print()  # New line at the end
+```
+
+#### JavaScript
+
+```javascript
+import { AimoClient } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+async function streamResponse() {
+  const stream = await client.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      { role: 'user', content: 'Tell me a story about a robot' }
+    ],
+    stream: true
+  });
+
+  process.stdout.write('Story: ');
+  
+  for await (const chunk of stream) {
+    if (chunk.choices[0]?.delta?.content) {
+      process.stdout.write(chunk.choices[0].delta.content);
+    }
+  }
+  
+  console.log(); // New line at the end
+}
+
+streamResponse();
+```
+
+### Error Handling
+
+#### Python
+
+```python
+from aimo import AimoClient, AimoError
+
+client = AimoClient(api_key="your_api_key_here")
+
+try:
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+    print(response.choices[0].message.content)
+    
+except AimoError as e:
+    if e.status_code == 401:
+        print("Authentication failed - check your API key")
+    elif e.status_code == 429:
+        print("Rate limit exceeded - please wait before retrying")
+    elif e.status_code >= 500:
+        print("Server error - please try again later")
+    else:
+        print(f"Request failed: {e}")
+```
+
+#### JavaScript
+
+```javascript
+import { AimoClient, AimoError } from '@aimo/sdk';
+
+const client = new AimoClient({
+  apiKey: process.env.AIMO_API_KEY
+});
+
+try {
+  const response = await client.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+  
+  console.log(response.choices[0].message.content);
+  
+} catch (error) {
+  if (error instanceof AimoError) {
+    if (error.status === 401) {
+      console.log('Authentication failed - check your API key');
+    } else if (error.status === 429) {
+      console.log('Rate limit exceeded - please wait before retrying');
+    } else if (error.status >= 500) {
+      console.log('Server error - please try again later');
+    } else {
+      console.log(`Request failed: ${error.message}`);
+    }
+  } else {
+    console.log(`Unexpected error: ${error}`);
+  }
+}
+```
+
+### Next Steps
+
+Now that you've seen basic usage examples, explore more advanced topics:
+
+* [Advanced Integration](/examples/advanced) - Complex workflows and patterns
+* [Python SDK](/examples/python-sdk) - Python-specific features and examples
+* [JavaScript SDK](/examples/javascript-sdk) - JavaScript-specific features and examples
+* [API Reference](/api-reference) - Complete API documentation
+
+
+## Architecture
+
+AiMo Network is built on a distributed, scalable architecture designed for high availability and performance.
+
+### System Overview
+
+```mermaid
+graph TB
+    U[Users] --> API[AiMo API Gateway]
+    API --> LB[Load Balancer]
+    LB --> R[Request Router]
+    R --> P1[Provider 1]
+    R --> P2[Provider 2]
+    R --> P3[Provider N]
+    
+    API --> AUTH[Authentication Service]
+    API --> BILL[Billing Service]
+    API --> MON[Monitoring Service]
+    
+    AUTH --> DB[(User Database)]
+    BILL --> DB
+    MON --> METRICS[(Metrics Store)]
+```
+
+### Core Components
+
+#### API Gateway
+
+* **Request handling**: Processes all incoming API requests
+* **Authentication**: Validates API keys and user permissions
+* **Rate limiting**: Enforces usage limits and prevents abuse
+* **Response formatting**: Standardizes responses across providers
+
+#### Request Router
+
+* **Model selection**: Routes requests to optimal model providers
+* **Load balancing**: Distributes load across available providers
+* **Failover**: Automatically retries failed requests
+* **Cost optimization**: Selects providers based on pricing and performance
+
+#### Provider Network
+
+* **Decentralized hosting**: Models hosted by independent providers
+* **Health monitoring**: Continuous monitoring of provider availability
+* **Performance tracking**: Real-time latency and quality metrics
+* **Reward distribution**: Automatic payment to providers
+
+#### Billing Engine
+
+* **Usage tracking**: Precise measurement of API usage
+* **Dynamic pricing**: Real-time pricing based on demand and supply
+* **Payment processing**: Automated billing and provider payments
+* **Cost optimization**: Tools to help users minimize costs
+
+### Data Flow
+
+#### 1. Request Processing
+
+1. User sends API request to AiMo Gateway
+2. Gateway authenticates request and validates permissions
+3. Router analyzes request and selects optimal provider
+4. Request forwarded to chosen provider
+5. Provider processes inference and returns result
+6. Gateway formats and returns response to user
+
+#### 2. Billing Flow
+
+1. Request usage recorded in real-time
+2. Billing engine calculates costs based on provider rates
+3. Usage aggregated and billed to user account
+4. Provider rewards calculated and distributed
+
+#### 3. Monitoring Flow
+
+1. All requests logged with performance metrics
+2. Provider health and availability tracked
+3. Quality metrics aggregated
+4. Alerts generated for service issues
+
+### Security Architecture
+
+#### Authentication & Authorization
+
+* **API Key Management**: Secure generation and rotation of API keys
+* **Role-Based Access**: Different permission levels for users and providers
+* **Request Signing**: Optional request signing for enhanced security
+
+#### Data Protection
+
+* **Encryption in Transit**: All data encrypted using TLS 1.3
+* **Encryption at Rest**: Sensitive data encrypted in storage
+* **Data Isolation**: User data isolated between requests
+* **Privacy Controls**: Options for data retention and deletion
+
+#### Network Security
+
+* **DDoS Protection**: Built-in protection against distributed attacks
+* **WAF**: Web Application Firewall for common attack patterns
+* **VPC Isolation**: Provider networks isolated for security
+
+### Scalability Features
+
+#### Horizontal Scaling
+
+* **Auto-scaling**: Automatic scaling based on demand
+* **Global Distribution**: Edge locations for reduced latency
+* **Provider Onboarding**: Easy addition of new model providers
+
+#### Performance Optimization
+
+* **Caching**: Intelligent caching of common requests
+* **Connection Pooling**: Efficient connection management
+* **Request Batching**: Batching of similar requests for efficiency
+
+### Reliability & Availability
+
+#### High Availability
+
+* **Multi-region deployment**: Services deployed across multiple regions
+* **Redundancy**: Multiple providers for popular models
+* **Health checks**: Continuous monitoring of all components
+
+#### Disaster Recovery
+
+* **Backup systems**: Automated backups of critical data
+* **Failover procedures**: Automatic failover to backup systems
+* **Recovery testing**: Regular testing of disaster recovery procedures
+
+### Technical Stack
+
+#### Backend Services
+
+* **API Gateway**: Node.js with Express/Fastify
+* **Microservices**: Go and Python for core services
+* **Message Queue**: Redis/RabbitMQ for async processing
+* **Database**: PostgreSQL for transactional data, Redis for caching
+
+#### Infrastructure
+
+* **Container Orchestration**: Kubernetes for service management
+* **Cloud Providers**: Multi-cloud deployment (AWS, GCP, Azure)
+* **CDN**: Global CDN for static content and edge caching
+* **Monitoring**: Prometheus, Grafana, and custom dashboards
+
+
+## Key Features
+
+AiMo Network provides a comprehensive set of features designed to make AI model access simple, reliable, and cost-effective.
+
+### 🚀 Universal Model Access
+
+#### Unified API Interface
+
+* **Single endpoint** for all AI models and providers
+* **Consistent request/response format** across different model types
+* **Automatic schema validation** for all API calls
+* **Standardized error handling** with detailed error messages
+
+#### Model Discovery
+
+* **Searchable model catalog** with filtering by capabilities, price, and performance
+* **Model comparison tools** to help choose the right model for your use case
+* **Real-time availability status** for all models
+* **Performance benchmarks** and user ratings
+
+### 💰 Intelligent Cost Management
+
+#### Dynamic Pricing
+
+* **Real-time pricing** based on supply and demand
+* **Transparent cost breakdown** for every request
+* **Price comparison** across different providers
+* **Cost optimization recommendations**
+
+#### Billing Flexibility
+
+* **Pay-per-use** pricing with no minimum commitments
+* **Prepaid credits** with bonus incentives
+* **Volume discounts** for high-usage customers
+* **Detailed usage analytics** with cost projections
+
+### ⚡ High Performance & Reliability
+
+#### Smart Request Routing
+
+* **Automatic load balancing** across multiple providers
+* **Latency-based routing** to minimize response times
+* **Geographic routing** to reduce network latency
+* **Provider health monitoring** with automatic failover
+
+#### Scalability
+
+* **Auto-scaling infrastructure** to handle any workload
+* **Global edge locations** for reduced latency
+* **Concurrent request handling** with no throttling
+* **Burst capacity** for sudden traffic spikes
+
+### 🔒 Enterprise-Grade Security
+
+#### Authentication & Access Control
+
+* **Secure API key management** with rotation capabilities
+* **Role-based access control** for team environments
+* **IP whitelisting** for additional security
+* **Audit logs** for all API activities
+
+#### Data Protection
+
+* **End-to-end encryption** for all data in transit
+* **Zero data retention** options for sensitive workloads
+* **GDPR and SOC 2 compliance** with regular audits
+* **Data residency controls** for regulatory compliance
+
+### 🔧 Developer Experience
+
+#### SDKs & Tools
+
+* **Official SDKs** for Python, JavaScript, Go, and more
+* **Command-line interface** for quick testing and automation
+* **Postman collections** for API exploration
+* **OpenAPI specifications** for custom integrations
+
+#### Documentation & Support
+
+* **Interactive API documentation** with live examples
+* **Code samples** in multiple programming languages
+* **Video tutorials** and getting started guides
+* **24/7 developer support** with technical experts
+
+### 📊 Analytics & Monitoring
+
+#### Usage Analytics
+
+* **Real-time usage dashboards** with detailed metrics
+* **Cost tracking** and budget alerts
+* **Performance analytics** including latency and error rates
+* **Custom reporting** with data export capabilities
+
+#### Model Performance Insights
+
+* **Response quality metrics** based on user feedback
+* **Latency benchmarks** across different models and providers
+* **Availability statistics** with uptime guarantees
+* **Comparative analysis** tools for model selection
+
+### 🌐 Provider Ecosystem
+
+#### Easy Provider Onboarding
+
+* **Simple registration process** for new providers
+* **Automated model testing** and validation
+* **Integration assistance** with technical support
+* **Performance monitoring** and optimization recommendations
+
+#### Fair Marketplace
+
+* **Transparent pricing mechanisms** with no hidden fees
+* **Quality-based ranking** to promote better providers
+* **Automatic payment distribution** to providers
+* **Dispute resolution** system for quality issues
+
+### 🔄 Advanced Features
+
+#### Request Optimization
+
+* **Request caching** for repeated queries
+* **Batch processing** for multiple requests
+* **Streaming responses** for real-time applications
+* **Request prioritization** based on user tiers
+
+#### Integration Capabilities
+
+* **Webhook notifications** for async processing
+* **Custom headers** and metadata support
+* **Request transformation** for different model formats
+* **Response post-processing** and formatting options
+
+### 🎯 Model Specializations
+
+#### Language Models
+
+* **Chat completion** endpoints compatible with OpenAI API
+* **Text generation** with custom parameters and controls
+* **Function calling** for tool integration
+* **Fine-tuned model support** for specialized use cases
+
+#### Multimodal Capabilities
+
+* **Image generation** from text prompts
+* **Vision models** for image analysis and description
+* **Audio transcription** and text-to-speech
+* **Video analysis** and content generation
+
+#### Specialized Models
+
+* **Code generation** and completion models
+* **Embedding models** for semantic search and similarity
+* **Translation models** for multiple languages
+* **Domain-specific models** for healthcare, finance, and more
+
+### 🚦 Quality Assurance
+
+#### Model Validation
+
+* **Automated testing** of all new models before deployment
+* **Performance benchmarking** against standard datasets
+* **Safety filtering** to prevent harmful content generation
+* **Regular model updates** with versioning support
+
+#### Service Level Agreements
+
+* **99.9% uptime guarantee** with automatic failover
+* **Response time guarantees** for different service tiers
+* **Data availability** guarantees with backup systems
+* **Support response times** based on subscription level
+

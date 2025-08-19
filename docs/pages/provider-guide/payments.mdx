@@ -1,0 +1,34 @@
+# Payment Integration
+
+## How Payments Work
+
+1. **User Escrow**: Users deposit tokens into escrow accounts
+2. **Request Locking**: Before each request, estimated cost is locked
+3. **Usage Tracking**: Your service reports actual token usage
+4. **Settlement**: Payments are automatically settled based on actual usage
+5. **Provider Earnings**: You can withdraw earnings to your wallet
+
+## Payment Settlement
+
+Payments are automatically handled by the AiMo Network based on your pricing and actual token usage reported in the `usage` field of your responses.
+
+## Withdrawing Earnings
+
+Your earnings accumulate in a managed provider account. To withdraw your earnings, you need to:
+
+1. **Request Router-Signed Transaction**: Send a request to get a router-signed transaction for withdrawing funds
+2. **Co-Sign the Transaction**: Sign the router-signed transaction with your provider wallet
+3. **Submit Transaction**: Submit the co-signed transaction to complete the withdrawal
+
+This dual-signature system ensures security while allowing providers to access their earnings.
+
+**Using the Dashboard (Recommended):**
+The provider dashboard simplifies this process by handling the router-signed transaction flow automatically. Simply:
+
+1. Navigate to the earnings section in your provider dashboard
+2. Specify the withdrawal amount
+3. Confirm the transaction with your wallet
+4. The dashboard handles the router coordination and transaction submission
+
+**Manual Process (Advanced):**
+For advanced users, the withdrawal process involves API calls to request router-signed transactions and manual transaction signing (detailed integration documentation provided separately).

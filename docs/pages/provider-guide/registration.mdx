@@ -1,0 +1,103 @@
+# Service Registration
+
+**Note:** The future implementation will require providers to mint a `Provider NFT` to register their metadata on-chain. This NFT-based registration system is currently in development.
+
+## Option A: Using the Dashboard (Recommended)
+
+The easiest way to register as a provider is through the AiMo Network provider dashboard:
+
+1. **Access the Dashboard**: Navigate to the provider dashboard
+2. **Connect Your Wallet**: Connect your provider wallet
+3. **Upload Metadata**: Provide your service information and pricing
+4. **Mint Provider NFT**: The dashboard will help you mint your Provider NFT (when implemented)
+5. **Register**: Complete the registration process
+
+## Option B: Manual Registration (Advanced)
+
+For advanced users who prefer command-line registration:
+
+### 1. Prepare Provider Metadata
+
+Create a JSON file describing your service models and pricing:
+
+```json
+{
+  "id": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+  "name": "My AI Service",
+  "category": "completion_model",
+  "models": [
+    {
+      "name": "gpt-3.5-turbo",
+      "pricing": [
+        {
+          "token_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "input_price": 1000,
+          "output_price": 2000
+        }
+      ]
+    },
+    {
+      "name": "gpt-4",
+      "pricing": [
+        {
+          "token_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "input_price": 10000,
+          "output_price": 30000
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Field Descriptions:**
+
+- `id`: Your provider's Solana public key
+- `name`: Human-readable name for your service
+- `category`: Service type (currently only `completion_model` is supported)
+- `models`: Array of models you provide
+- `token_mint`: Solana token mint address for payments (USDC example above)
+- `input_price`/`output_price`: Price per token in the smallest denomination
+
+### 2. Sign Provider Metadata
+
+Sign your metadata with your provider wallet:
+
+```bash
+# Create canonical JSON and sign it
+solana sign-offchain metadata.json --keypair ~/.config/solana/provider-id.json
+```
+
+This generates a signature you'll need for registration.
+
+### 3. Register with AiMo Network
+
+**Note:** This manual registration method will be replaced by the Provider NFT system in future releases.
+
+Register your provider using the API:
+
+```bash
+curl -X POST "https://devnet.aimo.network/api/v1/providers/register" \
+  -H "Authorization: Bearer aimo-sk-prod-[your-api-key]" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "id": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      "name": "My AI Service",
+      "category": "completion_model",
+      "models": [
+        {
+          "name": "gpt-3.5-turbo",
+          "pricing": [
+            {
+              "token_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "input_price": 1000,
+              "output_price": 2000
+            }
+          ]
+        }
+      ]
+    },
+    "signature": "3yZe7d...signature-from-solana-sign-offchain"
+  }'
+```

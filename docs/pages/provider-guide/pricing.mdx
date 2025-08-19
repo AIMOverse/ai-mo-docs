@@ -1,0 +1,41 @@
+# Pricing and Economics
+
+## Setting Competitive Prices
+
+Consider these factors when setting prices:
+
+1. **Token Costs**: Your underlying model provider costs
+2. **Infrastructure**: Server, bandwidth, and operational costs
+3. **Profit Margin**: Desired profit percentage
+4. **Market Competition**: Other providers' pricing
+5. **Model Quality**: Premium for better or specialized models
+
+## Price Per Token
+
+Prices are set in the smallest denomination of the payment token:
+
+- **USDC**: 6 decimals, so 1,000,000 = $1.00
+- **Example**: `input_price: 1000` = $0.001 per input token
+- **Example**: `output_price: 2000` = $0.002 per output token
+
+## Multiple Payment Tokens
+
+You can accept multiple tokens for the same model:
+
+```json
+{
+  "name": "gpt-4",
+  "pricing": [
+    {
+      "token_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "input_price": 10000,
+      "output_price": 30000
+    },
+    {
+      "token_mint": "So11111111111111111111111111111111111111112",
+      "input_price": 500000,
+      "output_price": 1500000
+    }
+  ]
+}
+```

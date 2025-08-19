@@ -1,0 +1,138 @@
+# Connecting Your Service
+
+## 1. Prepare Your HTTP Endpoint
+
+Ensure your service accepts POST requests with the following format:
+
+**Request Format:**
+
+```json
+{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {"role": "user", "content": "Hello, AI!"}
+  ],
+  "stream": true,
+  "max_tokens": 150,
+  "temperature": 0.7
+}
+```
+
+**Response Format (Non-streaming):**
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 8,
+    "total_tokens": 18
+  }
+}
+```
+
+**Response Format (Streaming):**
+For streaming responses, your service should return Server-Sent Events:
+
+```http
+Content-Type: text/event-stream
+
+data: {"choices":[{"delta":{"content":"Hello"}}]}
+
+data: {"choices":[{"delta":{"content":" there"}}]}
+
+data: {"choices":[{"delta":{"content":"!"}}],"finish_reason":"stop","usage":{"prompt_tokens":10,"completion_tokens":3}}
+
+data: [DONE]
+```
+
+## ⚠️ Critical Payment Warning
+
+**IMPORTANT**: You will NOT receive payment for requests if your responses do not include a properly formatted `usage` object.
+
+### Required Usage Object
+
+Every response must include a `usage` object with the following structure:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 8,
+    "total_tokens": 18
+  }
+}
+```
+
+### For Non-Streaming Responses
+
+Include the `usage` object directly in your response:
+
+```json
+{
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 8,
+    "total_tokens": 18
+  }
+}
+```
+
+### For Streaming Responses
+
+The `usage` object **must be included in the final chunk** before `[DONE]`:
+
+```http
+data: {"choices":[{"delta":{"content":"Final word"}}],"finish_reason":"stop","usage":{"prompt_tokens":10,"completion_tokens":15,"total_tokens":25}}
+
+data: [DONE]
+```
+
+**What happens without usage data:**
+
+- The AiMo Network cannot calculate your payment
+- Your earnings will be zero for that request
+- The user's locked balance will be recovered
+- No settlement transaction will be created
+
+Always ensure your service correctly calculates and reports token usage to receive payment for your services.
+
+## 2. Start the Proxy
+
+Use the AiMo proxy to connect your service to the network:
+
+```bash
+aimo proxy \
+  --node-url "https://devnet.aimo.network" \
+  --secret-key "aimo-sk-prod-[your-api-key]" \
+  --endpoint-url "http://localhost:8080" \
+  --api-key "your-service-api-key"
+```
+
+**Parameters:**
+
+- `--node-url`: AiMo Network node URL (use devnet for testing)
+- `--secret-key`: Your provider API key
+- `--endpoint-url`: Your service's HTTP endpoint
+- `--api-key`: Optional API key for your service (added as Authorization header)
+
+## 3. Test Your Connection
+
+Once the proxy is running, you should see logs indicating successful connection:
+
+```text
+INFO Starting proxy service...
+INFO Node URL: https://devnet.aimo.network
+INFO Endpoint URL: http://localhost:8080
+INFO Connecting to WebSocket: wss://devnet.aimo.network/api/v1/providers/subscribe
+INFO WebSocket connection established
+```

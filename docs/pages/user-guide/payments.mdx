@@ -1,0 +1,37 @@
+# Payment and Billing
+
+## Set Up Your Account Balance
+
+To use model services, you need to top up your escrow account with tokens:
+
+### Using the CLI
+
+1. **Get the Service Token**: Contact your AiMo Network node operator for the token mint address
+2. **Top Up Your Escrow**: You'll need to deposit tokens into your escrow account managed by the router
+
+### Using the Dashboard
+
+You can also top up your account balance directly through our web dashboard, which provides a user-friendly interface for account management.
+
+The escrow system ensures secure, automated payments for model usage without requiring manual approval for each request.
+
+## How Payments Work
+
+1. **Escrow Account**: Your tokens are held in a secure escrow account
+2. **Pre-Authorization**: Before each request, the system estimates and locks the maximum cost
+3. **Actual Settlement**: After the request completes, you're charged only for actual usage
+4. **Automatic Recovery**: If a request fails, locked tokens are automatically recovered
+
+## Usage Tracking
+
+Payments are calculated based on:
+
+- **Token Usage**: Input tokens (prompt) and output tokens (completion)
+- **Provider Pricing**: Each provider sets their own pricing per token
+- **Model Type**: Different models may have different pricing
+
+## Managing Your Balance
+
+- **Check Balance**: Monitor your escrow balance through your wallet or node operator tools
+- **Top Up**: Add more tokens to your escrow account when needed
+- **Withdraw**: Unused tokens can be withdrawn from your escrow account
