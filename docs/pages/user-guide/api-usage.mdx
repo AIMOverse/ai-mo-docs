@@ -47,7 +47,7 @@ curl -X POST "https://devnet.aimo.network/api/v1/chat/completions" \
   -H "Authorization: Bearer aimo-sk-dev-[your-api-key]" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo",
+    "model": "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
     "messages": [
       {"role": "user", "content": "Explain quantum computing"}
     ],
@@ -69,7 +69,7 @@ headers = {
 }
 
 data = {
-    "model": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo",
+    "model": "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
     "messages": [
         {"role": "user", "content": "What is machine learning?"}
     ],
@@ -91,7 +91,7 @@ const response = await fetch('https://devnet.aimo.network/api/v1/chat/completion
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    model: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo',
+    model: '8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3',
     messages: [
       { role: 'user', content: 'Tell me about blockchain technology' }
     ],
@@ -111,8 +111,10 @@ while (true) {
 
 ## Finding Model Providers
 
-To use AiMo Network, you need to know the provider's Solana public key and available models:
+To use AiMo Network, you need to find available models and their provider addresses:
 
-1. **Provider Directory**: Check with your AiMo Network node operator for a list of available providers
-2. **Provider Registration**: Providers register their services with their Solana public key
-3. **Model Names**: Each provider defines their own model names (e.g., "gpt-3.5-turbo", "claude-v1", etc.)
+1. **Visit the discover page**: Go to [https://aimo.network/demo/discover](https://aimo.network/demo/discover) to browse available models
+2. **Copy the model slug**: Find the model you want to use and copy its complete slug in the format `address:model_name`
+3. **Use in your requests**: Paste the copied slug directly into your API requests
+
+The model format is always `provider_pubkey:model_name` where `provider_pubkey` is the Solana public key of the model provider.

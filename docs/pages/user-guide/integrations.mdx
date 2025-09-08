@@ -13,7 +13,7 @@ openai.api_key = "aimo-sk-dev-[your-api-key]"
 
 # Use as normal, but specify provider:model format
 response = openai.ChatCompletion.create(
-    model="9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo",
+    model="8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
     messages=[
         {"role": "user", "content": "Hello, AI!"}
     ]
@@ -30,7 +30,7 @@ from langchain.chat_models import ChatOpenAI
 chat = ChatOpenAI(
     openai_api_base="https://devnet.aimo.network/api/v1",
     openai_api_key="aimo-sk-dev-xxxxxxx",
-    model_name="9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo"
+    model_name="8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3"
 )
 
 response = chat.predict("What is the future of AI?")

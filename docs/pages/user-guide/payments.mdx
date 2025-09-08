@@ -1,19 +1,24 @@
+import { Callout } from 'vocs/components'
+
 # Payment and Billing
+
+<Callout type="warning">
+The payment program currently runs only on devnet internally. When you top up your account, you transfer USDC to our system, which records the transaction and performs the onchain top-up internally on devnet. Payment settlement also runs on devnet. 
+
+We transfer providers' earnings to them whenever they request it through our system, based on devnet results and database records. We plan to migrate to mainnet in Q4 2025, after which centralized transactions will no longer be needed.
+</Callout>
 
 ## Set Up Your Account Balance
 
-To use model services, you need to top up your escrow account with tokens:
-
-### Using the CLI
-
-1. **Get the Service Token**: Contact your AiMo Network node operator for the token mint address
-2. **Top Up Your Escrow**: You'll need to deposit tokens into your escrow account managed by the router
+To use model services, you need to top up your escrow account with USDC:
 
 ### Using the Dashboard
 
-You can also top up your account balance directly through our web dashboard, which provides a user-friendly interface for account management.
+Currently, the only supported method for topping up your account is through the web dashboard:
 
-The escrow system ensures secure, automated payments for model usage without requiring manual approval for each request.
+1. **Visit the dashboard**: Go to [https://aimo.network/demo/dashboard](https://aimo.network/demo/dashboard)
+2. **Top up your account**: Add USDC to your escrow balance using the user-friendly dashboard interface
+3. **Monitor your balance**: Track your account balance and usage through the dashboard
 
 ## How Payments Work
 
