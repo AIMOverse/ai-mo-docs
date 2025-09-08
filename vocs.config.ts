@@ -4,7 +4,7 @@ export default defineConfig({
   title: 'AiMo Network Documentation',
   description: 'Documentation for the AiMo Network - Decentralized Intelligence Marketplace under permissionless unified API',
   baseUrl: 'https://docs.aimo.network',
-  topNav:[
+  topNav: [
     {
       text: 'Overview',
       link: '/overview',
@@ -15,7 +15,7 @@ export default defineConfig({
     },
     {
       text: 'Provider Guide',
-      link: '/provider-guide', 
+      link: '/provider-guide',
     },
     {
       text: 'Community',
@@ -88,42 +88,42 @@ export default defineConfig({
           text: 'Quick Start',
           link: '/provider-guide'
         },
-        {
-          text: 'Service Registration',
-          link: '/provider-guide/registration',
-        },
-        {
-          text: 'Service Integration',
-          link: '/provider-guide/service-integration',
-        },
-        {
-          text: 'Proxy Features',
-          link: '/provider-guide/proxy-features',
-        },
-        {
-          text: 'Payment Integration',
-          link: '/provider-guide/payments',
-        },
-        {
-          text: 'API Examples',
-          link: '/provider-guide/api-examples',
-        },
-        {
-          text: 'Deployment',
-          link: '/provider-guide/deployment',
-        },
-        {
-          text: 'Pricing',
-          link: '/provider-guide/pricing',
-        },
-        {
-          text: 'Troubleshooting',
-          link: '/provider-guide/troubleshooting',
-        },
-        {
-          text: 'Security',
-          link: '/provider-guide/security',
-        },
+        // {
+        //   text: 'Service Registration',
+        //   link: '/provider-guide/registration',
+        // },
+        // {
+        //   text: 'Service Integration',
+        //   link: '/provider-guide/service-integration',
+        // },
+        // {
+        //   text: 'Proxy Features',
+        //   link: '/provider-guide/proxy-features',
+        // },
+        // {
+        //   text: 'Payment Integration',
+        //   link: '/provider-guide/payments',
+        // },
+        // {
+        //   text: 'API Examples',
+        //   link: '/provider-guide/api-examples',
+        // },
+        // {
+        //   text: 'Deployment',
+        //   link: '/provider-guide/deployment',
+        // },
+        // {
+        //   text: 'Pricing',
+        //   link: '/provider-guide/pricing',
+        // },
+        // {
+        //   text: 'Troubleshooting',
+        //   link: '/provider-guide/troubleshooting',
+        // },
+        // {
+        //   text: 'Security',
+        //   link: '/provider-guide/security',
+        // },
       ],
     },
     {

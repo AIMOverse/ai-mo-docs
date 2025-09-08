@@ -1,3 +1,5 @@
+import { Callout } from 'vocs/components'
+
 # AiMo Network - Service Provider Guide
 
 Welcome to the AiMo Network Service Provider Guide. This documentation will help you connect your AI model services to the AiMo Network, enabling you to offer your AI models to users in a decentralized marketplace.
@@ -13,31 +15,34 @@ As a service provider on AiMo Network, you can:
 
 ### How It Works
 
-1. **Register as a Provider**: Create your provider profile with model metadata and pricing (future: mint Provider NFT)
-2. **Connect Your Service**: Use the AiMo proxy to bridge your HTTP API to the network
-3. **Receive Requests**: The proxy forwards user requests to your service
-4. **Get Paid**: Automatic settlement of payments for usage through blockchain escrow
-5. **Withdraw Earnings**: Request router-signed transactions to withdraw your earnings
+1. **Set up API Key**: Generate your provider API key for authentication
+2. **Set up API Endpoint**: Ensure your service is OpenAI-compatible
+3. **Configure Proxy**: Create a configuration file for the AiMo proxy
+4. **Run the Proxy**: Start the proxy to connect your service to the network
+5. **Retrieve Earning Tokens**: Withdraw your earnings from the network
 
 ## Getting Started
 
-### 1. Prerequisites
+Follow these steps to become an AiMo Network provider:
+
+### Prerequisites
 
 Before connecting to AiMo Network, ensure you have:
 
 - A Solana wallet with some SOL for transaction fees
-- An HTTP-based AI model service (REST API)
+- An HTTP-based AI model service (REST API) that's OpenAI-compatible
 - Your service accessible via HTTP/HTTPS endpoints
-- The AiMo CLI tool installed (for proxy connection)
-- Access to the AiMo Network provider dashboard (for registration and payment management)
+- The AiMo CLI tool installed
 
-### 2. Install AiMo CLI
+### Install AiMo CLI
 
 ```bash
 cargo install aimo-cli
 ```
 
-### 3. Create Your Provider Wallet
+## Step 1: Set Up API Key
+
+### Create Your Provider Wallet
 
 Generate a Solana wallet that will represent your provider identity:
 
@@ -51,53 +56,190 @@ solana-keygen pubkey ~/.config/solana/provider-id.json
 
 **Important**: Your provider's Solana public key will be your unique identifier on the network.
 
-### 4. Generate API Key
+### Generate API Key
 
 Create an API key for your provider account:
 
 ```bash
-aimo keygen --tag prod --valid-for 365 --scopes completion_model --id ~/.config/solana/provider-id.json
+aimo keygen --id ~/.config/solana/provider-id.json
 ```
 
-This generates an API key like: `aimo-sk-prod-[base58-encoded-key]`
+This generates an API key like: `aimo-sk-dev-[base58-encoded-key]`
 
-## Next Steps
+<Callout type="warning">
+  Only `dev` tag is supported now
+</Callout>
 
-Once you have completed the initial setup, explore the following sections:
+## Step 2: Set Up API Endpoint (OpenAI Compatible)
 
-- **Service Registration**: Register your service with AiMo Network
-- **Service Integration**: Connect your HTTP service to the network
-- **Proxy Features**: Understand the capabilities of the AiMo proxy
-- **Payment Integration**: Learn how payments and withdrawals work
-- **API Examples**: See integration examples for different service types
-- **Deployment**: Configure and deploy your service for production
-- **Pricing**: Set competitive pricing for your models
-- **Troubleshooting**: Debug common issues and get support
-- **Security**: Implement best practices for secure operation
+Your service must be compatible with OpenAI's chat completion API format:
 
-## Quick Reference
+### Request Format
 
-### Essential Commands
+Your endpoint should accept POST requests with this structure:
+
+```json
+{
+  "model": "your-model-name",
+  "messages": [
+    {"role": "user", "content": "Hello, AI!"}
+  ],
+  "stream": false,
+  "max_tokens": 150,
+  "temperature": 0.7
+}
+```
+
+### Response Format (Non-streaming)
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 8,
+    "total_tokens": 18
+  }
+}
+```
+
+### Response Format (Streaming)
+
+For streaming responses, return Server-Sent Events:
+
+```http
+Content-Type: text/event-stream
+
+data: {"choices":[{"delta":{"content":"Hello"}}]}
+
+data: {"choices":[{"delta":{"content":" there"}}]}
+
+data: {"choices":[{"delta":{"content":"!"}}],"finish_reason":"stop","usage":{"prompt_tokens":10,"completion_tokens":3}}
+
+data: [DONE]
+```
+
+<Callout type="warning">
+  **Critical**: You must include a properly formatted `usage` object in every response to receive payment. Without usage data, your earnings will be zero for that request.
+</Callout>
+
+## Step 3: Configure Proxy with Config File
+
+### Configuration File Introduction
+
+The AiMo proxy uses a configuration file to manage your service settings. Create a `config.toml` file with your service configuration:
+
+```toml
+# config.toml
+
+[router]
+# AIMO network node WebSocket URL
+url = "https://devnet.aimo.network"
+# Your AIMO secret key (generated with `aimo keygen`)
+api-key = "aimo-sk-dev-2zpjTUg1bwBvnLEGuw14H7YgYirodkpi1VLf8KV2PA1eEB6CSSWhawFxf6n3p8uoFkH8EviePLLuSyMj1EQae4ymZH5aDC8gNbzFvKDM2MvMwNcW7ouA2Jz73WGD2wUcaTz6gVow3q91PgRRy6BKzaZUqFVvr26t51H1wcGJJpx6RAjDS"
+
+[endpoint]
+# Your AI service endpoint URL
+url = "https://api.your-endpoint.ai/v1/chat/completions"
+# Your AI service API key
+api-key = "sk-6GD0Yv4e0yMzHYPJMRltBnwCZlAu3MrIqz9LEvnqDaNjAow2"
+
+[metadata]
+# Your provider public key (must match the signer in the secret key)
+id = "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq"
+# Human-readable provider name
+name = "My Completion Provider"
+# Provider category (currently only "completion_model" is supported)
+category = "completion_model"
+
+# Models you provide
+[[metadata.models]]
+name = "gpt-4o"
+display_name = "OpenAI: GPT-4o"
+provider_name = "openai"
+
+# Pricing for the model (you can have multiple pricing tiers for different tokens)
+[[metadata.models.pricing]]
+# Token mint address (this is WSOL - Wrapped SOL)
+token = "USDC_9"
+# Input token price (per token, in lamports)
+input_price = 1000
+# Output token price (per token, in lamports)
+output_price = 1000
+
+[[metadata.models]]
+# Model name. The model slug will be:
+# 8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek/deepseek-chat
+name = "deepseek/deepseek-chat"
+# Model display name
+display_name = "DeepSeek: DeepSeek V3"
+# Inference original provider's name
+provider_name = "deepseek"
+
+[[metadata.models.pricing]]
+# USDC_9 is a token with 9 decimals to replace the
+# original USDC (with 6 decimals) within our system.
+token = "USDC_9"
+
+# Price per token in USDC_9 basic units (= 10^-9 USDC)
+# For example, if a model's input price is $0.5 / M tokens
+# Which is `$0.5 * 10^-6 / token` = `500 * 10^-9 USDC`
+input_price = 500
+output_price = 1000
+
+# Configure other models here
+[[metadata.models]]
+name = "google/gemini-2.5-flash"
+display_name = "Google: Gemini 2.5 Flash Preview 05-20"
+provider_name = "google"
+
+[[metadata.models.pricing]]
+token = "USDC_9"
+input_price = 300
+output_price = 850
+```
+
+## Step 4: Run the Proxy
+
+Start the proxy using your configuration file:
 
 ```bash
-# Install CLI
-cargo install aimo-cli
-
-# Generate provider wallet
-solana-keygen new --outfile ~/.config/solana/provider-id.json
-
-# Generate API key
-aimo keygen --tag prod --valid-for 365 --scopes completion_model
-
-# Start proxy
-aimo proxy --node-url "https://devnet.aimo.network" --secret-key "[key]" --endpoint-url "http://localhost:8080"
+aimo proxy --config config.toml --id ~/.config/solana/provider-id.json
 ```
 
-### Model ID Format
+<Callout type="info">
+  **Router Node Development**: Currently, the router node iterates fast. The websocket connection will be closed if we restart the router node service, but the proxy will attempt to reconnect. Once the router node service is up, the proxy service you run will automatically re-connect to our node.
+</Callout>
 
-When users request your models, they use: `your_provider_pubkey:model_name`
+## Step 5: Retrieve Earning Tokens
 
-Example: `9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM:gpt-3.5-turbo`
+### How Payments Work
+
+1. **User Escrow**: Users deposit USDC into escrow accounts
+2. **Request Locking**: Before each request, estimated cost is locked
+3. **Usage Tracking**: Your service reports actual token usage
+4. **Settlement**: Payments are automatically settled based on actual usage
+5. **Provider Earnings**: Accumulated earnings can be withdrawn
+
+### Withdrawing Earnings
+
+Your earnings accumulate in a managed provider account. To withdraw:
+
+#### Using the Dashboard (Recommended)
+
+1. Navigate to the provider dashboard at [https://aimo.network/demo/dashboard](https://aimo.network/demo/dashboard)
+2. Go to the earnings section
+3. Specify the withdrawal amount
+4. Confirm the transaction with your wallet
+5. The dashboard handles the router coordination and transaction submission
 
 ---
 
