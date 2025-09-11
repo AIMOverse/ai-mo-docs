@@ -1,0 +1,89 @@
+# OpenAI SDK Integration
+
+Integrate AiMo Network with the official OpenAI SDK for seamless AI model access using familiar OpenAI-compatible APIs.
+
+## Installation
+
+:::code-group
+```bash [Python]
+pip install openai
+```
+
+```bash [Node.js]
+npm install openai
+```
+:::
+
+## Basic Setup
+
+:::code-group
+```python [Python]
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://devnet.aimo.network/api/v1",
+    api_key="aimo-sk-dev-[your-key]"
+)
+
+# Simple chat completion
+completion = client.chat.completions.create(
+    model="provider_pubkey:model_name",
+    messages=[
+        {"role": "user", "content": "Hello, AI!"}
+    ]
+)
+
+print(completion.choices[0].message.content)
+```
+
+```javascript [JavaScript]
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://devnet.aimo.network/api/v1",
+  apiKey: "aimo-sk-dev-[your-key]"
+});
+
+// Simple chat completion
+const completion = await client.chat.completions.create({
+  model: "provider_pubkey:model_name",
+  messages: [
+    { role: "user", content: "Hello, AI!" }
+  ]
+});
+
+console.log(completion.choices[0].message.content);
+```
+:::
+
+## Streaming Responses
+
+:::code-group
+```python [Python]
+stream = client.chat.completions.create(
+    model="provider_pubkey:model_name",
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+```
+
+```javascript [JavaScript]
+const stream = await client.chat.completions.create({
+  model: "provider_pubkey:model_name",
+  messages: [{ role: "user", content: "Tell me a story" }],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  if (chunk.choices[0]?.delta?.content) {
+    process.stdout.write(chunk.choices[0].delta.content);
+  }
+}
+```
+:::
+
+

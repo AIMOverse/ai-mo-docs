@@ -128,14 +128,31 @@ export default defineConfig({
     },
     {
       text: 'Community',
+      link: '/community',
       items: [
         {
-          text: 'Contributor guide',
-          link: '/community'
+          text: 'Frameworks',
+          link: '/community/frameworks',
         },
         {
-          text: 'Release Note',
-          link: '/community/release-note'
+          text: 'Amico',
+          link: '/community/amico',
+        },
+        {
+          text: 'OpenAI SDK',
+          link: '/community/openai-sdk',
+        },
+        {
+          text: 'LangChain',
+          link: '/community/langchain',
+        },
+        {
+          text: 'PydanticAI',
+          link: '/community/pydantic-ai',
+        },
+        {
+          text: 'Solana Agent Kit',
+          link: '/community/solana-agent-kit',
         },
         {
           text: 'Blog',

@@ -1,0 +1,143 @@
+# LangChain Integration
+
+Integrate AiMo Network with LangChain for building complex AI workflows, chains, and agents using decentralized AI models.
+
+## Installation
+
+:::code-group
+```bash [Python]
+pip install langchain-openai langchain-core
+```
+
+```bash [JavaScript]
+npm install @langchain/openai @langchain/core
+```
+:::
+
+## Basic Setup
+
+:::code-group
+```python [Python]
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+
+# Configure for AiMo Network
+llm = ChatOpenAI(
+    api_key="aimo-sk-dev-[your-key]",
+    base_url="https://devnet.aimo.network/api/v1",
+    model="provider_pubkey:model_name"
+)
+
+# Simple chat
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="Hello, how are you?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+```javascript [JavaScript]
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+
+// Configure for AiMo Network
+const llm = new ChatOpenAI({
+  apiKey: "aimo-sk-dev-[your-key]",
+  model: "provider_pubkey:model_name"
+}, {
+  baseURL: "https://devnet.aimo.network/api/v1"
+});
+
+// Simple chat
+const messages = [
+  new SystemMessage("You are a helpful assistant."),
+  new HumanMessage("Hello, how are you?")
+];
+
+const response = await llm.invoke(messages);
+console.log(response.content);
+```
+:::
+
+## Chains and Prompts
+
+:::code-group
+```python [Python]
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+# Create a prompt template
+template = """Question: {question}
+Answer: Let's think step by step."""
+
+prompt = PromptTemplate(
+    template=template, 
+    input_variables=["question"]
+)
+
+# Create chain
+chain = LLMChain(prompt=prompt, llm=llm)
+
+# Use the chain
+question = "What are the benefits of decentralized AI?"
+result = chain.run(question)
+print(result)
+```
+
+```javascript [JavaScript]
+import { PromptTemplate } from "@langchain/core/prompts";
+import { LLMChain } from "langchain/chains";
+
+// Create a prompt template
+const template = `Question: {question}
+Answer: Let's think step by step.`;
+
+const prompt = new PromptTemplate({
+  template: template,
+  inputVariables: ["question"]
+});
+
+// Create chain
+const chain = new LLMChain({ llm: llm, prompt: prompt });
+
+// Use the chain
+const question = "What are the benefits of decentralized AI?";
+const result = await chain.call({ question: question });
+console.log(result.text);
+```
+:::
+
+## Streaming Responses
+
+:::code-group
+```python [Python]
+# Streaming with LangChain
+for chunk in llm.stream(messages):
+    print(chunk.content, end="", flush=True)
+```
+
+```javascript [JavaScript]
+// Streaming with LangChain
+const stream = await llm.stream(messages);
+for await (const chunk of stream) {
+  process.stdout.write(chunk.content);
+}
+```
+:::
+
+## Advanced Usage
+
+### Building Complex Chains
+
+LangChain allows you to build sophisticated AI workflows by chaining multiple operations together. With AiMo Network, you can leverage decentralized models in these chains.
+
+### Agent Integration
+
+LangChain agents can use AiMo Network models as their reasoning engine, enabling decentralized AI-powered decision making.
+
+### Memory and Context
+
+LangChain's memory capabilities work seamlessly with AiMo Network models, allowing you to maintain conversation context across multiple interactions.
+

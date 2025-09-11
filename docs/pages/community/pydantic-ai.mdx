@@ -1,0 +1,134 @@
+# PydanticAI Integration
+
+Integrate AiMo Network with PydanticAI for type-safe AI interactions with structured outputs and powerful tool integration.
+
+## Installation
+
+```bash
+pip install 'pydantic-ai-slim[openai]'
+```
+
+## Basic Setup
+
+You can use PydanticAI with AiMo Network through its OpenAI-compatible interface:
+
+```python
+from pydantic_ai import Agent
+from pydantic_ai.models.openai import OpenAIModel
+
+# Configure for AiMo Network
+model = OpenAIModel(
+    "provider_pubkey:model_name",  # AiMo model format
+    base_url="https://devnet.aimo.network/api/v1",
+    api_key="aimo-sk-dev-[your-key]"
+)
+
+# Create agent
+agent = Agent(model)
+
+# Simple usage
+result = await agent.run("What is the meaning of life?")
+print(result.data)
+```
+
+## Structured Outputs
+
+PydanticAI's main advantage is type-safe structured outputs:
+
+```python
+from pydantic import BaseModel
+from pydantic_ai import Agent
+
+class WeatherResponse(BaseModel):
+    location: str
+    temperature: int
+    condition: str
+    humidity: int
+
+# Agent with structured output
+weather_agent = Agent(
+    model,
+    result_type=WeatherResponse,
+    system_prompt="You are a weather assistant. Always respond with structured weather data."
+)
+
+# Get structured response
+result = await weather_agent.run("What's the weather like in Paris?")
+weather_data: WeatherResponse = result.data
+
+print(f"Temperature in {weather_data.location}: {weather_data.temperature}°C")
+print(f"Condition: {weather_data.condition}")
+```
+
+## Agent with Tools
+
+```python
+from pydantic_ai import Agent, RunContext
+
+def get_current_time() -> str:
+    """Get the current time."""
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def calculate_sum(a: int, b: int) -> int:
+    """Calculate the sum of two numbers."""
+    return a + b
+
+# Agent with tools
+agent_with_tools = Agent(
+    model,
+    tools=[get_current_time, calculate_sum],
+    system_prompt="You are a helpful assistant with access to tools."
+)
+
+# Use tools
+result = await agent_with_tools.run("What time is it and what's 15 + 27?")
+print(result.data)
+```
+
+## Context and Dependencies
+
+```python
+from typing import Dict
+from pydantic_ai import Agent, RunContext
+
+class UserContext:
+    def __init__(self, user_id: str, preferences: Dict[str, str]):
+        self.user_id = user_id
+        self.preferences = preferences
+
+def get_user_preference(ctx: RunContext[UserContext], key: str) -> str:
+    """Get user preference by key."""
+    return ctx.deps.preferences.get(key, "Not set")
+
+# Agent with context
+contextual_agent = Agent(
+    model,
+    deps_type=UserContext,
+    tools=[get_user_preference],
+    system_prompt="You are a personalized assistant."
+)
+
+# Use with context
+user_context = UserContext("user123", {"theme": "dark", "language": "en"})
+result = await contextual_agent.run(
+    "What's my theme preference?",
+    deps=user_context
+)
+print(result.data)
+```
+
+## Advanced Features
+
+### Validation and Error Handling
+
+PydanticAI provides robust validation for both inputs and outputs, ensuring type safety throughout your AI applications.
+
+### Multi-Model Support
+
+You can configure agents to work with different models from AiMo Network by specifying different provider public keys and model names.
+
+### Async by Default
+
+PydanticAI is built with async support from the ground up, making it ideal for high-performance applications.
+
