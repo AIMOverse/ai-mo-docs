@@ -2,20 +2,124 @@
 
 Amico is an open-source platform-agnostic framework written in Rust and tailored for building edge-side AI agents. 
 
-:::note
+:::info
 Amico is built and maintained by the team behind AiMo Network, check out amico [documentation](https://amico.dev) for more details.
 :::
 
-## Installation
+## CLI Chatbot
 
-:::code-group
-```bash [Rust]
+To experience Amico directly, you can just install the pre-configured CLI chatbot with `cargo`:
+
+```bash
+export OPENAI_API_KEY="aimo-sk-dev-xxxxxxxx"
+export OPENAI_BASE_URL="https://devnet.aimo.network/api/v1"
 cargo install amico && amico
 ```
-:::
+
+See [Amico Docs](https://docs.amico.dev/docs/getting-started/run) for the full setup.
+
+## Installation
+
+```bash [Shell]
+cargo add amico-sdk amico-mods
+```
 
 ## Basic Setup
 
+```rust [main.rs]
+use amico::ai::service::{Service, ServiceBuilder};
+use amico::resource::Resource;
+use amico::task::Task;
+use amico_mods::interface::Plugin;
+use amico_mods::std::ai::providers::RigProvider;
+use amico_mods::std::ai::services::InMemoryService;
+use amico_mods::std::ai::tasks::chatbot::cli::CliTask;
+use amico_mods::std::ai::tasks::chatbot::context::ChatbotContext;
+use amico_mods::web3::solana::balance::BalanceSensor;
+use amico_mods::web3::solana::resources::SolanaClientResource;
+use amico_mods::web3::solana::trade::TradeEffector;
+use amico_mods::web3::wallet::Wallet;
+ 
+use solana_client::nonblocking::rpc_client::RpcClient;
+use std::process;
 
-## Streaming Responses
-
+#[tokio::main]
+async fn main() {
+    // Load agent wallet
+    let wallet = Wallet::load_or_save_new("agent_wallet.txt")
+        .inspect(|_| println!("Loaded agent wallet"))
+        .unwrap_or_else(|err| {
+            eprintln!("Error loading wallet: {err}");
+            process::exit(1);
+        });
+    // Make wallet a resource
+    let wallet = Resource::new("wallet".to_string(), wallet);
+ 
+    // Create Client resource
+    let client = SolanaClientResource::new(
+        "Client resource".to_string(),
+        RpcClient::new("https://api.devnet.solana.com"),
+    );
+ 
+    // Create BalanceSensor instance
+    let balance_sensor = Resource::new(
+        "balance_sensor".to_string(),
+        BalanceSensor::new(client.clone()),
+    );
+ 
+    // Create TradeEffector instance
+    let trade_effector = Resource::new(
+        "TradeEffector".to_string(),
+        TradeEffector::new(client.clone(), wallet.clone()),
+    );
+ 
+    // Create the Provider
+    let provider = RigProvider::new(
+        "https://devnet.aimo.network/api/v1", 
+        "aimo-sk-dev-xxxxxxxxx", // Replace with your AiMo API key
+    ).unwrap_or_else(|err| {
+        eprintln!("Error creating provider: {err}");
+        process::exit(1);
+    });
+ 
+    // Create the Service
+    let service = ServiceBuilder::new(provider)
+        .model("8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3".to_string())
+        .system_prompt(
+            "You are a helpful assistant.".to_string()
+        )
+        .temperature(0.2)
+        .max_tokens(100) // !! Do not set this value too high
+        .build::<InMemoryService<RigProvider>>();
+ 
+    println!();
+    println!("Agent wallet addresses:");
+    wallet.value().print_all_pubkeys();
+ 
+    println!();
+    println!("Using service plugin: {}", service.info().name);
+    println!("Tools enabled:\n{}", service.ctx().tools.describe());
+ 
+    // Create a task
+    let mut chatbot_ctx = ChatbotContext { service };
+    let mut task = CliTask;
+ 
+    // Run the task in execution order. If encounter error, re-run the task.
+    task.before_run(&mut chatbot_ctx)
+        .await
+        .unwrap_or_else(|err| {
+            eprintln!("Error during {task:?}.before_run");
+        });
+ 
+    while let Err(e) = task.run(&mut chatbot_ctx).await {
+        eprintln!("Error running task. Re-running");
+        continue;
+    }
+ 
+    task.after_run(&mut chatbot_ctx)
+        .await
+        .unwrap_or_else(|err| {
+            eprintln!("Error during {task:?}.after_run");
+        });
+}
+```
