@@ -108,10 +108,10 @@ export default defineConfig({
         //   text: 'API Examples',
         //   link: '/provider-guide/api-examples',
         // },
-        // {
-        //   text: 'Deployment',
-        //   link: '/provider-guide/deployment',
-        // },
+        {
+          text: 'Deployment',
+          link: '/provider-guide/deployment',
+        },
         // {
         //   text: 'Pricing',
         //   link: '/provider-guide/pricing',
