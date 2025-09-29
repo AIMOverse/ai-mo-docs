@@ -1,0 +1,277 @@
+# Build a Web Chatbot with Vercel AI SDK and AiMo
+
+This tutorial shows you how to build a minimal Next.js chatbot using the Vercel AI SDK with AiMo Network as the model provider. You’ll configure your AiMo API key and base URL, implement a streaming chat API route, and build a simple UI to chat with your chosen AiMo model.
+
+- Example repo: https://github.com/AIMOverse/vercel-chatbot-example
+
+## Prerequisites
+
+- Node.js 18+ (or 20+ recommended) and npm (or pnpm/yarn)
+- Basic familiarity with Next.js App Router
+- An AiMo account and API Key
+- A model identifier from AiMo Discover in the format `provider_pubkey:model_name`
+
+Base URL (API Host) for AiMo:
+- https://devnet.aimo.network/api/v1
+
+API Key format example:
+- aimo-sk-dev-xxxxxxxx
+
+Model identifier format:
+- provider_pubkey:model_name (copy from AiMo Discover)
+
+---
+
+## 1) Vercel AI SDK in a nutshell
+
+The Vercel AI SDK provides utilities and React hooks to build chat UIs with streaming responses from LLMs. It supports OpenAI-compatible APIs, which means you can point it to AiMo’s base URL and authenticate with your AiMo API key.
+
+Useful links:
+- Vercel AI SDK Docs: https://sdk.vercel.ai
+- Next.js: https://nextjs.org
+
+---
+
+## 2) Create a Next.js project
+
+Create a new Next.js app (TypeScript recommended):
+
+```bash
+npx create-next-app@latest aimo-vercel-chatbot --ts --eslint --app
+cd aimo-vercel-chatbot
+```
+
+Install the AI SDK packages you’ll use for streaming and React chat hooks:
+
+```bash
+npm install ai @ai-sdk/openai @ai-sdk/react
+```
+
+Notes:
+- The `ai` package provides server-side utilities such as `streamText`.
+- `@ai-sdk/openai` gives you an OpenAI-compatible provider that we’ll point to AiMo’s Base URL.
+- `@ai-sdk/react` provides the `useChat` React hook for a simple chat UI.
+
+---
+
+## 3) Get your AiMo API Key
+
+In the AiMo Web Dashboard:
+1. Connect your wallet.
+2. Top up your balance if needed.
+3. Create an API Key and copy it. It typically looks like `aimo-sk-dev-xxxxxxxx`.
+4. Find a model in the Discover panel and copy its identifier (format: `provider_pubkey:model_name`).
+
+---
+
+## 4) Configure environment variables
+
+In the root of your Next.js project, create a `.env.local` file:
+
+```env
+# AiMo OpenAI-compatible configuration
+OPENAI_API_KEY=aimo-sk-dev-xxxxxxxx
+OPENAI_BASE_URL=https://devnet.aimo.network/api/v1
+
+# The model you want to use from AiMo Discover
+AIMO_MODEL_ID=provider_pubkey:model_name
+```
+
+Notes:
+- Never commit real API keys to source control.
+- Next.js automatically loads `.env.local` in development and build.
+
+---
+
+## 5) Create the server API route (streaming)
+
+Create a streaming chat route using the Vercel AI SDK. With the App Router, create `app/api/chat/route.ts`:
+
+```ts
+// app/api/chat/route.ts
+import { streamText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const runtime = 'nodejs'; // or 'edge' if preferred
+
+const openai = createOpenAI({
+  baseURL: process.env.OPENAI_BASE_URL,   // AiMo base URL
+  apiKey: process.env.OPENAI_API_KEY,     // AiMo API key
+});
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  // Fallback model ID in case env var isn’t set (replace with your model)
+  const modelId = process.env.AIMO_MODEL_ID ?? 'provider_pubkey:model_name';
+
+  const result = await streamText({
+    model: openai(modelId), // AiMo model, e.g. "Fz7...abc:llama-3.1-8b-instruct"
+    messages,               // { role, content }[] from the client
+  });
+
+  // Converts the result to a Next.js Response streaming SSE to the client
+  return result.toAIStreamResponse();
+}
+```
+
+What this does:
+- Uses `createOpenAI` pointed to AiMo’s OpenAI-compatible endpoint.
+- Streams model responses back to the client for a responsive chat experience.
+
+---
+
+## 6) Build a simple chat UI
+
+Create a minimal chat page with `useChat` from `@ai-sdk/react`. This hook sends user messages to `/api/chat` and streams the response.
+
+Create (or edit) `app/page.tsx`:
+
+```tsx
+// app/page.tsx
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { useRef, useEffect } from 'react';
+
+export default function Home() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
+    api: '/api/chat',
+    maxToolRoundtrips: 0, // disable tool-calls unless you add tool support
+  });
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <main style={{ maxWidth: 720, margin: '40px auto', padding: 16 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+        AiMo + Vercel AI SDK Chatbot
+      </h1>
+      <p style={{ color: '#666', marginBottom: 24 }}>
+        Powered by AiMo Network (OpenAI-compatible) and Vercel AI SDK
+      </p>
+
+      <div
+        style={{
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: 16,
+          minHeight: 360,
+          overflowY: 'auto',
+          background: '#fafafa',
+        }}
+      >
+        {messages.map((m) => (
+          <div key={m.id} style={{ margin: '8px 0' }}>
+            <div style={{ fontSize: 12, color: '#888' }}>
+              {m.role === 'user' ? 'You' : 'Assistant'}
+            </div>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+        <input
+          value={input}
+          onChange={handleInputChange}
+          placeholder="Ask me anything..."
+          style={{
+            flex: 1,
+            padding: '12px 14px',
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            outline: 'none',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            padding: '12px 16px',
+            background: isLoading ? '#9ca3af' : '#111827',
+            color: '#fff',
+            borderRadius: 6,
+            border: 'none',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {isLoading ? 'Thinking…' : 'Send'}
+        </button>
+      </form>
+
+      {error ? (
+        <div style={{ color: 'crimson', marginTop: 12 }}>
+          Error: {error.message}
+        </div>
+      ) : null}
+    </main>
+  );
+}
+```
+
+This page:
+- Renders the conversation history.
+- Provides an input and submit button.
+- Streams assistant messages as they arrive.
+
+---
+
+## 7) Run locally
+
+```bash
+npm run dev
+```
+
+Open http://localhost:3000 and start chatting.
+
+If you see errors, double-check:
+- `.env.local` variables are defined and the app reloaded.
+- `OPENAI_BASE_URL` is exactly `https://devnet.aimo.network/api/v1`.
+- `AIMO_MODEL_ID` matches the identifier you copied from AiMo Discover.
+- Your API key is valid and funded.
+
+---
+
+## 8) Build and preview
+
+To build for production:
+
+```bash
+npm run build
+npm start
+```
+
+- This runs your production build locally at http://localhost:3000.
+- You can also deploy to Vercel and set the same environment variables on the project in the Vercel Dashboard.
+
+---
+
+## Troubleshooting
+
+- 401 Unauthorized
+  - Ensure the API key is correct, active, and has no leading/trailing spaces.
+- 404 Model Not Found
+  - Confirm the `AIMO_MODEL_ID` matches exactly (case-sensitive).
+- 429 / Insufficient Balance
+  - Top up your balance in the AiMo Dashboard.
+- Slow/timeout
+  - Try a different model or increase timeouts (if you’ve customized them).
+- TypeScript issues
+  - Ensure your Next.js and package versions are up-to-date. Remove “edge” runtime if you rely on Node.js-only APIs.
+
+---
+
+## Useful links
+
+- Example repo: https://github.com/AIMOverse/vercel-chatbot-example
+- Vercel AI SDK Docs: https://sdk.vercel.ai
+- Next.js Docs: https://nextjs.org/docs
+- AiMo Network Docs: (see site’s navigation)
+- AiMo Base URL: https://devnet.aimo.network/api/v1
+
+You now have a fully working streaming chatbot using the Vercel AI SDK with AiMo as the model provider. From here, you can add system prompts, tools, RAG retrieval, or expand the UI with message metadata, avatars, and multi-model switching.

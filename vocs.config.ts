@@ -1,92 +1,97 @@
-import { defineConfig } from 'vocs'
+import { defineConfig } from "vocs";
 
 export default defineConfig({
-  title: 'AiMo Network Documentation',
-  description: 'Documentation for the AiMo Network - Decentralized Intelligence Marketplace under permissionless unified API',
-  baseUrl: 'https://docs.aimo.network',
+  title: "AiMo Network Documentation",
+  description:
+    "Documentation for the AiMo Network - Decentralized Intelligence Marketplace under permissionless unified API",
+  baseUrl: "https://docs.aimo.network",
   topNav: [
     {
-      text: 'Overview',
-      link: '/overview',
+      text: "Overview",
+      link: "/overview",
     },
     {
-      text: 'User Guide',
-      link: '/user-guide',
+      text: "User Guide",
+      link: "/user-guide",
     },
     {
-      text: 'Provider Guide',
-      link: '/provider-guide',
+      text: "Provider Guide",
+      link: "/provider-guide",
     },
     {
-      text: 'Community',
-      link: '/community',
+      text: "Tutorials",
+      link: "/tutorials",
+    },
+    {
+      text: "Community",
+      link: "/community",
     },
   ],
   sidebar: [
     {
-      text: 'Overview',
+      text: "Overview",
       items: [
         {
-          text: 'Quick Start',
-          link: '/overview'
+          text: "Quick Start",
+          link: "/overview",
         },
         {
-          text: 'FAQ',
-          link: '/overview/faq',
+          text: "FAQ",
+          link: "/overview/faq",
         },
         {
-          text: 'Key Features',
-          link: '/overview/features',
+          text: "Key Features",
+          link: "/overview/features",
         },
         {
-          text: 'What\'s Next',
-          link: '/overview/whats-next',
+          text: "What's Next",
+          link: "/overview/whats-next",
         },
       ],
     },
     {
-      text: 'User Guide',
+      text: "User Guide",
       items: [
         {
-          text: 'Quick Start',
-          link: '/user-guide'
+          text: "Quick Start",
+          link: "/user-guide",
         },
         {
-          text: 'Authentication',
-          link: '/user-guide/authentication',
+          text: "Authentication",
+          link: "/user-guide/authentication",
         },
         {
-          text: 'API Usage',
-          link: '/user-guide/api-usage',
+          text: "API Usage",
+          link: "/user-guide/api-usage",
         },
         {
-          text: 'Payments',
-          link: '/user-guide/payments',
+          text: "Payments",
+          link: "/user-guide/payments",
         },
         {
-          text: 'Streaming',
-          link: '/user-guide/streaming',
+          text: "Streaming",
+          link: "/user-guide/streaming",
         },
         {
-          text: 'Error Handling',
-          link: '/user-guide/error-handling',
+          text: "Error Handling",
+          link: "/user-guide/error-handling",
         },
         {
-          text: 'Integrations',
-          link: '/user-guide/integrations',
+          text: "Integrations",
+          link: "/user-guide/integrations",
         },
         {
-          text: 'Support',
-          link: '/user-guide/support',
+          text: "Support",
+          link: "/user-guide/support",
         },
       ],
     },
     {
-      text: 'Provider Guide',
+      text: "Provider Guide",
       items: [
         {
-          text: 'Quick Start',
-          link: '/provider-guide'
+          text: "Quick Start",
+          link: "/provider-guide",
         },
         // {
         //   text: 'Service Registration',
@@ -109,8 +114,8 @@ export default defineConfig({
         //   link: '/provider-guide/api-examples',
         // },
         {
-          text: 'Deployment',
-          link: '/provider-guide/deployment',
+          text: "Deployment",
+          link: "/provider-guide/deployment",
         },
         // {
         //   text: 'Pricing',
@@ -127,46 +132,63 @@ export default defineConfig({
       ],
     },
     {
-      text: 'Community',
-      link: '/community',
+      text: "Tutorials",
+      items: [
+        // {
+        //   text: "Web Chatbot",
+        //   link: "/tutorials/vercel-chatbot",
+        // },
+        {
+          text: "Getting Started",
+          link: "/tutorials/getting-started",
+        },
+        {
+          text: "Cherry Studio",
+          link: "/tutorials/cherry-studio",
+        },
+      ],
+    },
+    {
+      text: "Community",
+      link: "/community",
       items: [
         {
-          text: 'Frameworks',
-          link: '/community/frameworks',
+          text: "Frameworks",
+          link: "/community/frameworks",
         },
         {
-          text: 'Amico',
-          link: '/community/amico',
+          text: "Amico",
+          link: "/community/amico",
         },
         {
-          text: 'OpenAI SDK',
-          link: '/community/openai-sdk',
+          text: "OpenAI SDK",
+          link: "/community/openai-sdk",
         },
         {
-          text: 'LangChain',
-          link: '/community/langchain',
+          text: "LangChain",
+          link: "/community/langchain",
         },
         {
-          text: 'PydanticAI',
-          link: '/community/pydantic-ai',
+          text: "PydanticAI",
+          link: "/community/pydantic-ai",
         },
         {
-          text: 'Solana Agent Kit',
-          link: '/community/solana-agent-kit',
+          text: "Solana Agent Kit",
+          link: "/community/solana-agent-kit",
         },
         {
-          text: 'Blog',
-          link: 'https://aimo.network/blog'
+          text: "Blog",
+          link: "https://aimo.network/blog",
         },
         {
-          text: 'Twitter/X',
-          link: 'https://x.com/AiMoNetwork'
+          text: "Twitter/X",
+          link: "https://x.com/AiMoNetwork",
         },
         {
-          text: 'Discord',
-          link: 'https://discord.gg/MkeG9Zwuaw'
-        }
+          text: "Discord",
+          link: "https://discord.gg/MkeG9Zwuaw",
+        },
       ],
     },
   ],
-})
+});
