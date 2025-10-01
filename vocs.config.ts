@@ -19,8 +19,8 @@ export default defineConfig({
       link: "/provider-guide",
     },
     {
-      text: "Tutorials",
-      link: "/tutorials",
+      text: "Integrations",
+      link: "/integrations",
     },
     {
       text: "Community",
@@ -132,50 +132,45 @@ export default defineConfig({
       ],
     },
     {
-      text: "Tutorials",
+      text: "Integrations",
       items: [
-        // {
-        //   text: "Web Chatbot",
-        //   link: "/tutorials/vercel-chatbot",
-        // },
         {
-          text: "Getting Started",
-          link: "/tutorials/getting-started",
+          text: "Quick Start",
+          link: "/integrations",
+        },
+        {
+          text: "Amico Framework",
+          link: "/integrations/amico-framework",
         },
         {
           text: "Cherry Studio",
-          link: "/tutorials/cherry-studio",
+          link: "/integrations/cherry-studio",
+        },
+        {
+          text: "Vercel AI SDK",
+          link: "/integrations/vercel-ai-sdk",
+        },
+        {
+          text: "OpenAI SDK",
+          link: "/integrations/openai-sdk",
+        },
+        {
+          text: "LangChain",
+          link: "/integrations/langchain",
+        },
+        {
+          text: "PydanticAI",
+          link: "/integrations/pydantic-ai",
+        },
+        {
+          text: "Solana Agent Kit",
+          link: "/integrations/solana-agent-kit",
         },
       ],
     },
     {
       text: "Community",
-      link: "/community",
       items: [
-        {
-          text: "Frameworks",
-          link: "/community/frameworks",
-        },
-        {
-          text: "Amico",
-          link: "/community/amico",
-        },
-        {
-          text: "OpenAI SDK",
-          link: "/community/openai-sdk",
-        },
-        {
-          text: "LangChain",
-          link: "/community/langchain",
-        },
-        {
-          text: "PydanticAI",
-          link: "/community/pydantic-ai",
-        },
-        {
-          text: "Solana Agent Kit",
-          link: "/community/solana-agent-kit",
-        },
         {
           text: "Blog",
           link: "https://aimo.network/blog",
@@ -187,6 +182,30 @@ export default defineConfig({
         {
           text: "Discord",
           link: "https://discord.gg/MkeG9Zwuaw",
+        },
+        {
+          text: "Github",
+          link: "https://github.com/AIMOverse",
+        },
+        {
+          text: "Ecosystem",
+          link: "https://aimo.network/ecosystem",
+        },
+        {
+          text: "Careers",
+          link: "https://aimo.network/careers",
+        },
+        {
+          text: "Privacy Policy",
+          link: "https://aimo.network/privacy-policy",
+        },
+        {
+          text: "Terms of Service",
+          link: "https://aimo.network/terms-of-service",
+        },
+        {
+          text: "Contact Us",
+          link: "mailto:kelsenliu@aimo.network",
         },
       ],
     },
