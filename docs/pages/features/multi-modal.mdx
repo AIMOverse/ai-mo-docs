@@ -1,0 +1,55 @@
+# Multimodal Capabilities
+
+AiMo Network supports multiple input modalities beyond text, allowing you to send images, PDFs, and audio files to compatible models through our unified API. This enables rich multimodal interactions for a wide variety of use cases.
+
+## Supported Modalities
+
+### Images
+Send images to vision-capable models for analysis, description, OCR, and more. AiMo Network supports multiple image formats and both URL-based and base64-encoded images.
+
+### Image Generation
+Generate images from text prompts using AI models with image output capabilities. AiMo Network supports various image generation models that can create high-quality images based on your descriptions.
+
+### PDFs
+Process PDF documents with any model on AiMo Network. Our intelligent PDF parsing system extracts text and handles both text-based and scanned documents.
+
+### Audio
+Send audio files to speech-capable models for transcription, analysis, and processing. AiMo Network supports common audio formats with automatic routing to compatible models.
+
+## Getting Started
+
+All multimodal inputs use the same `/api/v1/chat/completions` endpoint with the `messages` parameter. Different content types are specified in the message content array:
+
+- **Images**: Use `image_url` content type
+- **PDFs**: Use `file` content type with PDF data
+- **Audio**: Use `input_audio` content type
+
+You can combine multiple modalities in a single request, and the number of files you can send varies by provider and model.
+
+## Model Compatibility
+
+Not all models support every modality. AiMo Network automatically filters available models based on your request content:
+
+- **Vision models**: Required for image processing
+- **File-compatible models**: Can process PDFs natively or through our parsing system
+- **Audio-capable models**: Required for audio input processing
+
+Go to our [**Marketplace**](https://aimo.network/marketplace) to find models that support your desired input modalities.
+
+## Input Format Support
+
+AiMo Network supports both **direct URLs** and **base64-encoded data** for multimodal inputs:
+
+### URLs (Recommended for public content)
+- **Images**: `https://example.com/image.jpg`
+- **PDFs**: `https://example.com/document.pdf`
+- **Audio**: Not supported via URL (base64 only)
+
+### Base64 Encoding (Required for local files)
+- **Images**: `data:image/jpeg;base64,{base64_data}`
+- **PDFs**: `data:application/pdf;base64,{base64_data}`
+- **Audio**: Raw base64 string with format specification
+
+:::info
+  URLs are more efficient for large files as they don't require local encoding and reduce request payload size. Base64 encoding is required for local files or when the content is not publicly accessible.
+:::

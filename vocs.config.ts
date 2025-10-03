@@ -19,10 +19,6 @@ export default defineConfig({
       link: "/provider-guide",
     },
     {
-      text: "Integrations",
-      link: "/integrations",
-    },
-    {
       text: "Community",
       link: "/community",
     },
@@ -40,12 +36,29 @@ export default defineConfig({
           link: "/overview/faq",
         },
         {
-          text: "Key Features",
-          link: "/overview/features",
+          text: "Principles",
+          link: "/overview/principles",
         },
         {
           text: "What's Next",
           link: "/overview/whats-next",
+        },
+      ],
+    },
+    {
+      text: "Features",
+      items: [
+        {
+          text: "Privacy & Logging",
+          link: "/features/privacy-and-logging",
+        },
+        {
+          text: "Provider Routing",
+          link: "/features/provider-routing",
+        },
+        {
+          text: "Multi Modal",
+          link: "/features/multi-modal",
         },
       ],
     },
