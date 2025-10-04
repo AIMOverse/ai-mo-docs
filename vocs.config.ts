@@ -90,10 +90,6 @@ export default defineConfig({
           link: "/user-guide/error-handling",
         },
         {
-          text: "Integrations",
-          link: "/user-guide/integrations",
-        },
-        {
           text: "Support",
           link: "/user-guide/support",
         },

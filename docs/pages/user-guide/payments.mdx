@@ -1,12 +1,10 @@
-import { Callout } from 'vocs/components'
-
 # Payment and Billing
 
-<Callout type="warning">
-The payment program currently runs only on devnet internally. When you top up your account, you transfer USDC to our system, which records the transaction and performs the onchain top-up internally on devnet. Payment settlement also runs on devnet. 
+:::warning
+The payment program currently runs only on devnet internally. When you top up your account, you transfer USDC to our system, which records the transaction and performs the onchain top-up internally on devnet. Payment settlement also runs on devnet.
 
 We transfer providers' earnings to them whenever they request it through our system, based on devnet results and database records. We plan to migrate to mainnet in Q4 2025, after which centralized transactions will no longer be needed.
-</Callout>
+:::
 
 ## Set Up Your Account Balance
 
@@ -40,3 +38,17 @@ Payments are calculated based on:
 - **Check Balance**: Monitor your escrow balance through your wallet or node operator tools
 - **Top Up**: Add more tokens to your escrow account when needed
 - **Withdraw**: Unused tokens can be withdrawn from your escrow account
+
+## Onramp/Offramp Guide
+
+AiMo Network uses stablecoins for permissionless on-chain settlement. Users need to onramp fiat to crypto to use the network and offramp crypto to fiat to cash out.
+
+:::info
+We plan to integrate onramp/offramp providers into web applications and support stablecoin-focused blockchains in the future as usage increases. This will provide a seamless experience for users and increase network adoption.
+:::
+
+For most users, we recommend using [MoonPay](https://moonpay.io/). MoonPay is a popular onramp/offramp provider that supports multiple cryptocurrencies and fiat currencies.
+
+For users in areas that face geo-restrictions, we recommend using P2P services provided by mainstream exchanges such as Binance, OKX, and other exchanges that are licensed in your country.
+
+If you encounter any particular issues, do not hesitate to reach out to us by joining our [Discord server](https://discord.gg/G3zVrZDa5C) and get support, we will do our best to help you.

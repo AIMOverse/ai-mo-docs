@@ -16,6 +16,23 @@ All integrations follow OpenAI's API specification, making it easy to switch bet
 
 ---
 
+## Rate Limits and Best Practices
+
+### Performance Optimization
+
+1. **Use Streaming**: Enable streaming for better user experience
+2. **Batch Requests**: Group multiple requests when possible
+3. **Cache Responses**: Cache responses for repeated queries
+4. **Monitor Costs**: Track token usage to optimize costs
+
+### Fair Usage
+
+1. **Respect Rate Limits**: Don't exceed provider-specific rate limits
+2. **Optimize Prompts**: Use efficient prompts to reduce token costs
+3. **Handle Errors Gracefully**: Implement proper retry logic with exponential backoff
+
+---
+
 ## Amico Framework
 
 [Amico](https://amico.dev) is an open-source platform-agnostic framework written in Rust for building edge-side AI agents. Built by the team behind AiMo Network.
