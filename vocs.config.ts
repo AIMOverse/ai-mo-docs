@@ -60,6 +60,10 @@ export default defineConfig({
           text: "Multi Modal",
           link: "/features/multi-modal",
         },
+        {
+          text: "Zero Completion Insurance",
+          link: "/features/zero-completion-insurance",
+        },
       ],
     },
     {

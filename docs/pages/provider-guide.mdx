@@ -1,5 +1,3 @@
-import { Callout } from 'vocs/components'
-
 # AiMo Network - Service Provider Guide
 
 Welcome to the AiMo Network Service Provider Guide. This documentation will help you connect your AI model services to the AiMo Network, enabling you to offer your AI models to users in a decentralized marketplace.
@@ -66,9 +64,9 @@ aimo keygen --id ~/.config/solana/provider-id.json
 
 This generates an API key like: `aimo-sk-dev-[base58-encoded-key]`
 
-<Callout type="warning">
+:::warning
   Only `dev` tag is supported now
-</Callout>
+:::
 
 ## Step 2: Set Up API Endpoint (OpenAI Compatible)
 
@@ -127,9 +125,9 @@ data: {"choices":[{"delta":{"content":"!"}}],"finish_reason":"stop","usage":{"pr
 data: [DONE]
 ```
 
-<Callout type="warning">
+:::warning
   **Critical**: You must include a properly formatted `usage` object in every response to receive payment. Without usage data, your earnings will be zero for that request.
-</Callout>
+:::
 
 ## Step 3: Configure Proxy with Config File
 
@@ -215,9 +213,9 @@ Start the proxy using your configuration file:
 aimo proxy --config config.toml --id ~/.config/solana/provider-id.json
 ```
 
-<Callout type="info">
+:::info
   **Router Node Development**: Currently, the router node iterates fast. The websocket connection will be closed if we restart the router node service, but the proxy will attempt to reconnect. Once the router node service is up, the proxy service you run will automatically re-connect to our node.
-</Callout>
+:::
 
 ## Step 5: Retrieve Earning Tokens
 
