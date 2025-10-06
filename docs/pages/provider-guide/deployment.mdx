@@ -12,6 +12,10 @@ Docker deployment offers several advantages for running the AIMO proxy:
 
 ## Running AIMO Proxy with Docker
 
+### Prerequisites
+
+Before running the proxy, generate your API key via the [AiMo Network Dashboard](https://aimo.network/account/keys).
+
 ### Docker Compose Setup
 
 Create a `compose.yml` file for a more robust deployment:
@@ -19,23 +23,20 @@ Create a `compose.yml` file for a more robust deployment:
 ```yaml
 services:
   proxy:
-    image: ghcr.io/aimoverse/aimo-proxy:main
+    image: ghcr.io/aimonetwork/proxy:main
     container_name: aimo-proxy
     network_mode: host
     volumes:
-      - ./config:/usr/local/config
+      # Mount a specific config file directly
+      - ./proxy.dev.toml:/etc/proxy/config.toml
+    environment:
+      # Default: /etc/proxy/proxy.toml
+      CONFIG_FILE_PATH: /etc/proxy/config.toml
 ```
 
-## Configuration Directory Structure
+## Configuration File
 
-Organize your configuration files in a clear directory structure:
-
-```
-config/
-- proxy.toml  # Main AIMO proxy configuration
-```
-
-### Example Main Configuration (`config/proxy.toml`)
+### Example Configuration (`proxy.dev.toml`)
 
 :::note
 Go to [web dashboard](https://aimo.network/account/keys) to generate a key.
@@ -43,196 +44,72 @@ Go to [web dashboard](https://aimo.network/account/keys) to generate a key.
 
 ```toml
 [router]
-url = "http://localhost:8000"
-api-key = "aimo-sk-dev-1234"
+url = "https://devnet.aimo.network"
+# prefix with `std::env::` to read from env vars
+api_key = "std::env::AIMO_API_KEY"
 
-[endpoint]
-# LiteLLM Endpoint
-url = "http://127.0.0.1:4000/v1/chat/completions"
-# LiteLLM Virtual Key without limit
-api-key = "sk-1234"
-
-[metadata]
-id = "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq"
-name = "AiMo Network"
-category = "completion_model"
-
-[[metadata.models]]
-name = "deepseek-chat-v3"
+# Model metadata
+[[models]]
+name = "glm-4_5-air-free"
 display_name = "DeepSeek Chat V3 0324"
-provider_name = "deepseek"
-[[metadata.models.pricing]]
-token = "USDC_9"
-input_price = 200
-output_price = 800
+provider_name = "chutesai"
+# optional
+context_length = 128000
+# optional
+input_modalities = ["file", "image", "text"]
+output_modalities = ["text", "image"]
 
-# More models here
+[models.pricing]
+# USDC per million token
+prompt = 0.1
+# USDC per million token
+completion = 1.2
+# USDC per image input (optional)
+image = 1
+
+# How to access the model
+[models.params]
+model = "chutesai/zai-org/GLM-4.5-Air"
+api_base = "https://api.chutesai.com/v1"
+# prefix with `std::env::` to read from env vars
+api_key = "std::env::CHUTESAI_API_KEY"
+
+# Add more models by repeating the [[models]] section
 # ...
 ```
 
-## Recommended Setup: LiteLLM + AIMO Proxy
+## Running Without Docker
 
-For production deployments, we recommend using LiteLLM as a frontend to the AIMO proxy. This setup provides additional features like caching, rate limiting, and unified API interfaces.
+If you prefer not to use Docker, you can install and run the proxy directly:
 
-### Architecture Overview
-
-```
-AiMo Network Router → AiMo Proxy → LiteLLM → AI Providers
-```
-
-### LiteLLM Setup
-
-#### Docker compose file `./compose.yaml`
-
-```yaml
-services:
-  litellm-proxy:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm-proxy
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./litellm_config.yaml:/app/config.yaml
-      - ./data:/data
-    env_file:
-      - .env.litellm
-    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
-    restart: unless-stopped
-    depends_on:
-      - db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - litellm-network
-
-  db:
-    image: postgres:15
-    container_name: litellm-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: litellm
-      POSTGRES_PASSWORD: litellm
-      POSTGRES_DB: litellm
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
-    networks:
-      - litellm-network
-
-networks:
-  litellm-network:
-    driver: bridge
-```
-
-#### Docker Environment `./.env.litellm`
-
-```
-# LiteLLM Proxy Configuration
-LITELLM_MASTER_KEY=sk-1234
-
-# Model Provider API Keys (used by LiteLLM)
-OPENROUTER_API_KEY=sk-or-v1-1234
-
-# Database (Postgres)
-LITELLM_DATABASE_URL=postgresql://litellm:litellm@db:5432/litellm
-
-ENABLE_ADMIN_ENDPOINTS=true
-
-LITELLM_LOG=DEBUG
-```
-
-#### LiteLLM Configuration (`./litellm_config.yaml`)
-
-```yaml
-# Model list
-model_list:
-  # Example: gpt-5-nano via OpenRouter
-  - model_name: gpt-5-nano
-    litellm_params:
-      model: openrouter/openai/gpt-5-nano
-      api_base: https://openrouter.ai/api/v1
-      api_key: os.environ/OPENROUTER_API_KEY
-
-# General settings
-general_settings:
-  master_key: os.environ/LITELLM_MASTER_KEY  # Set a master key for proxy auth
-  database_url: os.environ/LITELLM_DATABASE_URL  # Disabled for now
-  database_logging: true
-  
-# Logging configuration
-litellm_settings:
-  drop_params: true  # Drop unsupported params instead of erroring
-  set_verbose: true
-  json_logs: true
-  
-# Rate limiting (optional)
-router_settings:
-  enable_pre_call_checks: true
-  enable_admin_api: true
-  
-logging:
-  level: DEBUG
-  format: json
-
-# Success/Error callbacks (optional)
-# success_callback: ["langfuse"]  # Track successful calls
-# failure_callback: ["langfuse"]  # Track failed calls
-```
-
-### Generating Virtual Keys in LiteLLM
-
-To create a virtual key in LiteLLM with unlimited usage, unlimited request rate, and access to any models, you need to generate a key without specifying any budget, rate limit, or model restrictions. If you omit parameters like max_budget, tpm_limit, rpm_limit, and models, the key will not have those limits enforced, and by default, can access all configured models.
+### Install via Cargo
 
 ```bash
-curl 'http://0.0.0.0:4000/key/generate' \
---header 'Authorization: Bearer <your-master-key>' \
---header 'Content-Type: application/json' \
---data-raw '{}'
+cargo install aimo-proxy
 ```
 
-### AiMo Proxy Endpoint Configuration
+### Run the Proxy
+
+```bash
+aimo-proxy --config proxy.dev.toml
+```
+
+## Environment Variables
+
+You can use environment variables in your configuration by prefixing values with `std::env::`:
+
+```bash
+# Set environment variables
+export AIMO_API_KEY="aimo-sk-prod-your-key-here"
+export CHUTESAI_API_KEY="your-provider-api-key"
+```
+
+Then reference them in your config:
 
 ```toml
-[endpoint]
-# LiteLLM Endpoint
-url = "http://127.0.0.1:4000/v1/chat/completions"
-# LiteLLM Virtual Key without limit
-api-key = "sk-1234"
-```
+[router]
+api_key = "std::env::AIMO_API_KEY"
 
-### Model Mapping Configuration
-
-Map LiteLLM model names to your AIMO proxy configuration:
-
-**AIMO Proxy Models** → **LiteLLM Model Names**
-
-```yaml
-# In litellm.conf
-model_list:
-  # For example, my-gpt-5-nano
-  - model_name: my-gpt-5-nano
-    litellm_params:
-      model: openrouter/openai/gpt-5-nano
-      api_base: https://openrouter.ai/api/v1
-      api_key: os.environ/OPENROUTER_API_KEY
-
-```
-
-Map the model name in AiMo Network's `proxy.toml`:
-
-```toml
-# ...
-
-[[metadata.models]]
-# Put the model name here
-name = "my-gpt-5-nano"
-display_name = "GPT-5 Nano"
-provider_name = "openai"
-[[metadata.models.pricing]]
-token = "USDC_9"
-input_price = 200
-output_price = 800
+[models.params]
+api_key = "std::env::CHUTESAI_API_KEY"
 ```
