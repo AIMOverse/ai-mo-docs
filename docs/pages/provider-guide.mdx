@@ -30,42 +30,28 @@ Before connecting to AiMo Network, ensure you have:
 - A Solana wallet with some SOL for transaction fees
 - An HTTP-based AI model service (REST API) that's OpenAI-compatible
 - Your service accessible via HTTP/HTTPS endpoints
-- The AiMo CLI tool installed
-
-### Install AiMo CLI
-
-```bash
-cargo install aimo-cli
-```
+- The AiMo Proxy installed (via Cargo or Docker)
 
 ## Step 1: Set Up API Key
 
-### Create Your Provider Wallet
+### Generate API Key via Web Console
 
-Generate a Solana wallet that will represent your provider identity:
+Generate your provider API key through the AiMo Network web dashboard:
 
-```bash
-# Generate a new wallet for your provider
-solana-keygen new --outfile ~/.config/solana/provider-id.json
+1. Navigate to the [AiMo Network Dashboard](https://aimo.network/account/keys)
+2. Connect your Solana wallet
+3. Go to the API Keys section
+4. Click "Generate Provider API Key"
+5. Copy and securely store your API key
 
-# Check your provider's public key
-solana-keygen pubkey ~/.config/solana/provider-id.json
-```
+Your API key will look like: `aimo-sk-dev-[base58-encoded-key]`
 
-**Important**: Your provider's Solana public key will be your unique identifier on the network.
-
-### Generate API Key
-
-Create an API key for your provider account:
-
-```bash
-aimo keygen --id ~/.config/solana/provider-id.json
-```
-
-This generates an API key like: `aimo-sk-dev-[base58-encoded-key]`
+:::info
+  Only `dev` tag is supported now.
+:::
 
 :::warning
-  Only `dev` tag is supported now
+  Store your API key securely. It cannot be retrieved again after generation.
 :::
 
 ## Step 2: Set Up API Endpoint (OpenAI Compatible)
@@ -139,78 +125,102 @@ The AiMo proxy uses a configuration file to manage your service settings. Create
 # config.toml
 
 [router]
-# AIMO network node WebSocket URL
 url = "https://devnet.aimo.network"
-# Your AIMO secret key (generated with `aimo keygen`)
-api-key = "aimo-sk-dev-2zpjTUg1bwBvnLEGuw14H7YgYirodkpi1VLf8KV2PA1eEB6CSSWhawFxf6n3p8uoFkH8EviePLLuSyMj1EQae4ymZH5aDC8gNbzFvKDM2MvMwNcW7ouA2Jz73WGD2wUcaTz6gVow3q91PgRRy6BKzaZUqFVvr26t51H1wcGJJpx6RAjDS"
+# prefix with `std::env::` to read from env vars
+api_key = "std::env::AIMO_API_KEY"
 
-[endpoint]
-# Your AI service endpoint URL
-url = "https://api.your-endpoint.ai/v1/chat/completions"
-# Your AI service API key
-api-key = "sk-6GD0Yv4e0yMzHYPJMRltBnwCZlAu3MrIqz9LEvnqDaNjAow2"
-
-[metadata]
-# Your provider public key (must match the signer in the secret key)
-id = "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq"
-# Human-readable provider name
-name = "My Completion Provider"
-# Provider category (currently only "completion_model" is supported)
-category = "completion_model"
-
-# Models you provide
-[[metadata.models]]
+# Model metadata
+[[models]]
 name = "gpt-4o"
 display_name = "OpenAI: GPT-4o"
 provider_name = "openai"
+# optional
+context_length = 128000
+# optional
+input_modalities = ["text"]
+output_modalities = ["text"]
 
-# Pricing for the model (you can have multiple pricing tiers for different tokens)
-[[metadata.models.pricing]]
-# Token mint address (this is WSOL - Wrapped SOL)
-token = "USDC_9"
-# Input token price (per token, in lamports)
-input_price = 1000
-# Output token price (per token, in lamports)
-output_price = 1000
+[models.pricing]
+# USDC per million token
+prompt = 2.5
+# USDC per million token
+completion = 10.0
+# USDC per image input (optional)
+# image = 1.0
 
-[[metadata.models]]
-# Model name. The model slug will be:
-# 8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek/deepseek-chat
-name = "deepseek/deepseek-chat"
-# Model display name
+# How to access the model
+[models.params]
+model = "gpt-4o"
+api_base = "https://api.openai.com/v1"
+# prefix with `std::env::` to read from env vars
+api_key = "std::env::OPENAI_API_KEY"
+
+# Add more models by repeating the [[models]] section
+[[models]]
+name = "deepseek-chat-v3"
 display_name = "DeepSeek: DeepSeek V3"
-# Inference original provider's name
 provider_name = "deepseek"
+context_length = 64000
 
-[[metadata.models.pricing]]
-# USDC_9 is a token with 9 decimals to replace the
-# original USDC (with 6 decimals) within our system.
-token = "USDC_9"
+[models.pricing]
+# USDC per million token
+prompt = 0.5
+completion = 1.0
 
-# Price per token in USDC_9 basic units (= 10^-9 USDC)
-# For example, if a model's input price is $0.5 / M tokens
-# Which is `$0.5 * 10^-6 / token` = `500 * 10^-9 USDC`
-input_price = 500
-output_price = 1000
+[models.params]
+model = "deepseek-chat"
+api_base = "https://api.deepseek.com/v1"
+api_key = "std::env::DEEPSEEK_API_KEY"
 
-# Configure other models here
-[[metadata.models]]
-name = "google/gemini-2.5-flash"
+# Another example model
+[[models]]
+name = "gemini-2.5-flash"
 display_name = "Google: Gemini 2.5 Flash Preview 05-20"
 provider_name = "google"
 
-[[metadata.models.pricing]]
-token = "USDC_9"
-input_price = 300
-output_price = 850
+[models.pricing]
+prompt = 0.3
+completion = 0.85
+
+[models.params]
+model = "gemini-2.5-flash"
+api_base = "https://generativelanguage.googleapis.com/v1"
+api_key = "std::env::GOOGLE_API_KEY"
 ```
 
-## Step 4: Run the Proxy
+### Using Environment Variables
+
+Set your API keys as environment variables for security:
+
+```bash
+export AIMO_API_KEY="aimo-sk-dev-your-key-here"
+export OPENAI_API_KEY="sk-your-openai-key"
+export DEEPSEEK_API_KEY="sk-your-deepseek-key"
+export GOOGLE_API_KEY="your-google-api-key"
+```
+
+## Step 4: Install and Run the Proxy
+
+### Install AiMo Proxy
+
+You can install the proxy via Cargo or use Docker:
+
+**Option A: Install via Cargo**
+
+```bash
+cargo install aimo-proxy
+```
+
+**Option B: Use Docker**
+
+See the [Docker Deployment Guide](/provider-guide/deployment) for detailed Docker setup instructions.
+
+### Run the Proxy
 
 Start the proxy using your configuration file:
 
 ```bash
-aimo proxy --config config.toml --id ~/.config/solana/provider-id.json
+aimo-proxy --config config.toml
 ```
 
 :::info
