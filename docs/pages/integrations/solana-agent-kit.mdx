@@ -1,0 +1,563 @@
+# Solana Agent Kit Integration Guide
+
+Integrate AiMo Network with a Solana Agent Kit (by Send AI or a similar provider) to build autonomous Solana-enabled AI agents that can read on-chain data, sign and send transactions, and reason about blockchain state.
+
+This guide covers:
+1. Overview & Architecture
+2. Prerequisites
+3. Quick Start
+4. Installation
+5. Environment Setup
+6. Wallet / Key Management
+7. Core Agent Structure
+8. Tooling (Balance, Transfer, SPL tokens, Prices)
+9. Execution Loop & Reasoning Pattern
+10. Testing & Localnet Usage
+11. Troubleshooting
+12. Security Best Practices
+13. Extensibility Ideas
+14. Quick Reference
+15. System Prompt Template (Example)
+16. Adding AIMO LLM Client (Conceptual)
+17. Deployment Considerations
+18. Versioning & Change Control
+19. Example End-to-End Flow
+20. Next Steps
+
+## 1. Overview & Architecture
+
+A Solana-enabled AI agent typically has these layers:
+
+- LLM Interface (AIMO, OpenAI-compatible endpoint, etc.)
+- Tooling Layer (functions the model can invoke: balances, send SOL, SPL token interactions)
+- Chain Clients (e.g. @solana/web3.js, RPC providers like Helius, Triton, etc.)
+- Wallet Abstraction (Keypair or remote signer)
+- Orchestration / Reasoning Loop (decides which tool to call next)
+- State & Memory (conversation context, prior actions, safety rails)
+- Observability (logging, metrics, tracing)
+
+The Agent Kit acts as a unified toolbox exposed to the model. The model “plans” execution steps and the runtime enforces correctness and safety.
+
+## 2. Prerequisites
+
+- Node.js 18+ (LTS recommended)
+- pnpm installed
+- AIMO API key (AIMO_API_KEY) if using AIMO-hosted LLM endpoint
+- Access to a Solana RPC (public or premium)
+- Basic understanding of:
+  - Solana accounts & lamports
+  - Transaction structure
+  - SPL tokens
+
+Optional:
+- Helius, Triton, or other indexing / enhanced RPC API key
+- Jupiter API key (for swaps)
+- OpenAI / Anthropic keys (if multi-provider routing)
+
+## 3. Quick Start (High-Level)
+
+1. Create a project directory.
+2. Initialize package.json and install dependencies.
+3. Add environment variables (.env).
+4. Generate or import a wallet keypair.
+5. Implement a base agent file that:
+   - Loads env
+   - Initializes LLM client
+   - Registers Solana tools
+   - Runs a reasoning loop (single-turn or multi-step)
+6. Execute a sample prompt like: “What is my SOL balance? Send 0.001 SOL to &lt;address&gt;.”
+
+## 4. Installation
+
+Core dependencies you will likely need (replace versions as desired):
+
+```typescript
+pnpm add @solana/web3.js bs58 dotenv
+# If you have a published Solana Agent Kit library, add it here:
+# pnpm add @your-org/solana-agent-kit
+# For price or swap integrations (optional):
+# pnpm add node-fetch
+```
+
+Development tooling:
+
+```typescript
+pnpm add -D typescript ts-node @types/node
+```
+
+Initialize TypeScript:
+
+```typescript
+npx tsc --init
+```
+
+## 5. Environment Setup
+
+Create a file named .env (never commit with real secrets):
+
+```typescript
+AIMO_API_KEY=your_aimo_key
+AIMO_BASE_URL=https://devnet.aimo.network/api/v1
+AIMO_MODEL=kimi-k2-0711-preview
+
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+# or devnet:
+# SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_PRIVATE_KEY=base58_or_json_array_private_key
+SOLANA_COMMITMENT=confirmed
+
+# Optional
+HELIUS_API_KEY=
+JUPITER_BASE_URL=https://quote-api.jup.ag
+JUPITER_API_KEY=
+LOG_LEVEL=debug
+MAX_AGENT_STEPS=8
+```
+
+Add a sanitized .env.example:
+
+```typescript
+AIMO_API_KEY=
+AIMO_BASE_URL=https://devnet.aimo.network/api/v1
+AIMO_MODEL=kimi-k2-0711-preview
+SOLANA_RPC_URL=
+SOLANA_PRIVATE_KEY=
+SOLANA_COMMITMENT=confirmed
+LOG_LEVEL=info
+MAX_AGENT_STEPS=8
+```
+
+## 6. Wallet / Key Management
+
+You can store a Solana keypair in several formats:
+- Base58-encoded secret key (64 bytes)
+- JSON array (like the output of solana-keygen)
+- External signer service (KMS / HSM) – recommended in production
+
+Basic Keypair loader example (conceptual):
+
+```typescript
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+
+export function loadKeypair(raw: string): Keypair {
+  // Try base58 first
+  try {
+    const decoded = bs58.decode(raw);
+    if (decoded.length === 64) return Keypair.fromSecretKey(decoded);
+  } catch (_) { /* fallthrough */ }
+
+  // Try JSON array
+  try {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) {
+      const bytes = Uint8Array.from(arr);
+      return Keypair.fromSecretKey(bytes);
+    }
+  } catch (_) { /* fallthrough */ }
+
+  throw new Error('Invalid SOLANA_PRIVATE_KEY format');
+}
+```
+
+Security notes:
+- Never log the secret key.
+- Rotate keys when migrating environments.
+- For production, consider a signing service or custodian.
+
+## 7. Core Agent Structure
+
+Recommended directory layout:
+
+```typescript
+.
+├─ src/
+│  ├─ agent/
+│  │  ├─ index.ts
+│  │  ├─ tools/
+│  │  │  ├─ balance.ts
+│  │  │  ├─ transfer.ts
+│  │  │  ├─ spl.ts
+│  │  │  └─ prices.ts
+│  │  ├─ env.ts
+│  │  ├─ wallet.ts
+│  │  └─ systemPrompt.ts
+│  ├─ llm/
+│  │  └─ aimoClient.ts
+│  ├─ runner.ts
+│  └─ types.ts
+├─ package.json
+├─ .env
+└─ tsconfig.json
+```
+
+Each tool exports a uniform interface:
+
+```typescript
+export interface AgentTool {
+  name: string;
+  description: string;
+  run: (args: any, context: ToolContext) => Promise<any>;
+  schema?: Record<string, any>; // optional for validation
+}
+
+export interface ToolContext {
+  connection: Connection;
+  wallet: Keypair;
+  logger: (...args: any[]) => void;
+}
+```
+
+## 8. Tooling Examples
+
+A. Balance Tool (SOL):
+
+```typescript
+import { Connection, PublicKey } from '@solana/web3.js';
+
+export const balanceTool = {
+  name: 'get_sol_balance',
+  description: 'Fetches the SOL balance (in SOL) for the agent or specified address.',
+  run: async (args: { address?: string }, ctx) => {
+    const target = args.address
+      ? new PublicKey(args.address)
+      : ctx.wallet.publicKey;
+    const lamports = await ctx.connection.getBalance(target);
+    return { address: target.toBase58(), sol: lamports / 1e9 };
+  }
+};
+```
+
+B. Transfer SOL:
+
+```typescript
+import { SystemProgram, Transaction, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+
+export const transferSolTool = {
+  name: 'transfer_sol',
+  description: 'Transfers SOL to a recipient address.',
+  run: async (args: { to: string; amountSol: number }, ctx) => {
+    if (!args.to || typeof args.amountSol !== 'number') {
+      throw new Error('to and amountSol are required.');
+    }
+    const toPk = new PublicKey(args.to);
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: ctx.wallet.publicKey,
+        toPubkey: toPk,
+        lamports: Math.floor(args.amountSol * LAMPORTS_PER_SOL),
+      })
+    );
+    const sig = await ctx.connection.sendTransaction(tx, [ctx.wallet]);
+    const confirmation = await ctx.connection.confirmTransaction(sig, 'confirmed');
+    return { signature: sig, confirmation };
+  }
+};
+```
+
+C. SPL Token Balance (simplified):
+
+```typescript
+import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
+
+export const splBalanceTool = {
+  name: 'get_spl_balance',
+  description: 'Gets SPL token balance for a mint.',
+  run: async (args: { mint: string }, ctx) => {
+    const ata = await getAssociatedTokenAddress(
+      new PublicKey(args.mint),
+      ctx.wallet.publicKey
+    );
+    try {
+      const acc = await getAccount(ctx.connection, ata);
+      return {
+        mint: args.mint,
+        amount: Number(acc.amount), // raw integer
+        decimalsNote: 'You must know token decimals separately to format.'
+      };
+    } catch {
+      return { mint: args.mint, amount: 0, note: 'Account not found (no balance).' };
+    }
+  }
+};
+```
+
+D. Price Tool (off-chain aggregator placeholder):
+
+```typescript
+import fetch from 'node-fetch';
+
+export const priceTool = {
+  name: 'get_price',
+  description: 'Fetches token price from a public aggregator (symbol-based).',
+  run: async (args: { symbol: string }) => {
+    if (!args.symbol) throw new Error('symbol is required');
+    // Placeholder endpoint (replace with a reliable oracle or aggregator)
+    const res = await fetch(`https://price.jup.ag/v4/price?ids=${encodeURIComponent(args.symbol)}`);
+    if (!res.ok) throw new Error(`Price API error: ${res.status}`);
+    const data = await res.json();
+    return data;
+  }
+};
+```
+
+Register tools in `tools/index`:
+
+```typescript
+import { balanceTool } from './balance';
+import { transferSolTool } from './transfer';
+import { splBalanceTool } from './spl';
+import { priceTool } from './prices';
+
+export function getTools() {
+  return [balanceTool, transferSolTool, splBalanceTool, priceTool];
+}
+```
+
+## 9. Execution Loop & Reasoning Pattern
+
+A minimal “react-style” loop might:
+1. Accept user prompt
+2. Ask LLM: “Given tools T and history H, decide next step (THOUGHT / ACTION / FINAL).”
+3. If ACTION, parse JSON specifying tool name + args
+4. Execute tool, append tool result to history
+5. Loop until FINAL or max steps
+
+Pseudocode sketch:
+
+```typescript
+async function runAgent({ prompt }) {
+  const history: any[] = [];
+  for (let step = 0; step < maxSteps; step++) {
+    const modelInput = buildModelInput(prompt, history, tools);
+    const llmOutput = await llm.invoke(modelInput);
+
+    const parsed = parseLLMOutput(llmOutput); // Must be robust to hallucinations
+    if (parsed.type === 'FINAL') {
+      return parsed.output;
+    } else if (parsed.type === 'ACTION') {
+      const tool = tools.find(t => t.name === parsed.tool);
+      if (!tool) {
+        history.push({ role: 'system', content: `Unknown tool: ${parsed.tool}` });
+        continue;
+      }
+      try {
+        const result = await tool.run(parsed.args || {}, context);
+        history.push({ role: 'tool', name: tool.name, content: JSON.stringify(result) });
+      } catch (err) {
+        history.push({ role: 'tool', name: tool.name, content: `ERROR: ${(err as Error).message}` });
+      }
+    } else {
+      history.push({ role: 'system', content: 'Unrecognized response format.' });
+    }
+  }
+  return { error: 'Max steps reached with no final answer.' };
+}
+```
+
+Consider adding:
+- JSON schema validation on tool arguments
+- Rate limiting to avoid spamming RPC
+- Safety checks for large transfers
+
+## 10. Testing & Localnet
+
+Localnet workflow:
+
+1. Start local validator:
+```typescript
+solana-test-validator --reset
+```
+2. Airdrop SOL to agent wallet:
+```typescript
+solana airdrop 5 <AGENT_PUBKEY> --url localhost
+```
+3. Point `SOLANA_RPC_URL` to `http://localhost:8899`
+4. Run agent and test actions (balance, transfer to a second test wallet)
+5. Use anchor or custom programs to simulate contract interactions
+
+Integration tests example outline (Jest or Vitest):
+
+```typescript
+describe('Solana Agent Tools', () => {
+  it('fetches balance', async () => {
+    const res = await balanceTool.run({}, testContext);
+    expect(res.sol).toBeGreaterThan(0);
+  });
+
+  it('transfers SOL', async () => {
+    const res = await transferSolTool.run({ to: recipient, amountSol: 0.001 }, testContext);
+    expect(res.signature).toMatch(/^[A-Za-z0-9]+$/);
+  });
+});
+```
+
+## 11. Troubleshooting
+
+Issue: RPC rate limit / 429  
+Cause: Excess tool calls or shared public RPC  
+Fix: Add batching, caching, or upgrade RPC tier
+
+Issue: Blockhash not found  
+Cause: Transaction sent too slowly  
+Fix: Refresh recent blockhash before signing if past validity window
+
+Issue: Insufficient funds  
+Cause: Attempting transfer > balance  
+Fix: Query balance first; ask user for top-up or airdrop (on devnet)
+
+Issue: Tool hallucination  
+Cause: LLM invents non-existent tool  
+Fix: Provide strict system prompt + parse & reject unknown tool names
+
+Issue: Token decimals confusion  
+Cause: Raw SPL amount not human-readable  
+Fix: Query mint info (getMint) and format: human = raw / (10 ** decimals)
+
+## 12. Security Best Practices
+
+- Never echo private keys or seeds back to user.
+- Enforce recipient allowlists for production if high-value flows.
+- Add maximum single-transfer threshold; ask for user confirmation beyond it.
+- Sign only transactions constructed by audited tool logic (no raw user-provided serialized tx).
+- Use read-only / limited RPC keys where possible for queries.
+- Implement structured logging and redact secrets.
+- Consider positive tool gating: the agent must “justify” each on-chain action in reasoning before execution.
+
+## 13. Extensibility Ideas
+
+- Add Swap Tool (Jupiter): Provide best route quotes and perform token swaps.
+- Add NFT Metadata Tool: Fetch metadata via Helius or Metaplex.
+- Add Governance Tool: Read proposals and cast votes (with safeguards).
+- Portfolio Aggregation: Summarize positions across protocols.
+- Risk Analysis: Evaluate exposure, large token concentrations, or expired positions.
+- Cost Estimation: Show approximate compute units / expected fee before sending.
+
+## 14. Quick Reference
+
+Scaffold:
+```typescript
+mkdir solana-agent && cd solana-agent
+pnpm init -y
+```
+
+Install:
+```typescript
+pnpm add @solana/web3.js bs58 dotenv
+```
+
+Env:
+```typescript
+cp .env.example .env
+# Fill in values
+```
+
+Run (example script):
+```typescript
+pnpm ts-node src/runner.ts "What is my SOL balance?"
+```
+
+Recommended env (devnet):
+```typescript
+SOLANA_RPC_URL=https://api.devnet.solana.com
+```
+
+Request airdrop:
+```typescript
+solana airdrop 2 <PUBKEY> --url https://api.devnet.solana.com
+```
+
+## 15. System Prompt Template (Example)
+
+```typescript
+You are a Solana on-chain agent with the ability to:
+- Read balances (SOL & SPL)
+- Transfer SOL
+- Query SPL token accounts
+- Fetch indicative prices
+
+Guidelines:
+1. Always inspect the wallet state before first action.
+2. Ask clarifying questions if user intent is ambiguous.
+3. Never fabricate tool outputs; only use actual tool results.
+4. If you lack a capability, state it plainly and suggest adding or enabling a tool.
+5. Provide concise answers; show amounts in SOL or tokens with symbol if known.
+
+If an action fails with a transient RPC error, you may retry once; otherwise, inform the user.
+```
+
+## 16. Adding AIMO LLM Client (Conceptual)
+
+Pseudo-implementation:
+
+```typescript
+import fetch from 'node-fetch';
+
+export function createAimoClient({ apiKey, baseUrl, model }: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+}) {
+  return {
+    async chat(messages: { role: string; content: string }[]) {
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.3,
+        })
+      });
+      if (!res.ok) throw new Error(`AIMO error: ${res.status}`);
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+  };
+}
+```
+
+Integrate into reasoning loop:
+- Convert internal state to a messages array (system + user + tool outputs).
+- Parse model output into structured directives (Thought / Action / Final).
+
+## 17. Deployment Considerations
+
+- Use a process manager (PM2) or container orchestration (Kubernetes) for uptime.
+- Include health checks (e.g., can fetch recent slot).
+- Maintain a versioned schema for tool interfaces.
+- Log each action with correlation IDs for audits.
+- Add circuit breakers: if error rate > threshold, suspend on-chain actions.
+
+## 18. Versioning & Change Control
+
+- Keep tool contracts stable; if breaking changes occur, increment a tool version name (e.g., transfer_sol_v2).
+- Tag releases in git.
+- Maintain a CHANGELOG with added / removed tools and LLM prompt adjustments.
+
+## 19. Example End-to-End Flow (Concept Narrative)
+
+```typescript
+User: Send 0.002 SOL to Address X and tell me resulting balance.
+Agent:
+1. Thought: Need current balance.
+2. Action: get_sol_balance
+3. Tool Output: { address: "...", sol: 0.015 }
+4. Thought: Enough funds. Proceed with transfer.
+5. Action: transfer_sol { to: X, amountSol: 0.002 }
+6. Tool Output: { signature: "...", confirmation: { ... } }
+7. Action: get_sol_balance
+8. Tool Output: { address: "...", sol: 0.013 }
+9. Final: Transaction sent (signature...). New balance: 0.013 SOL.
+```
+
+## 20. Next Steps
+
+- Add deterministic parsing (tool JSON extraction) using regex or structured output mode.
+- Implement memory retention for multi-session continuity.
+- Integrate cost tracking (lamports spent, RPC calls).
+- Add risk flags (large transfers, repeated failures, suspicious addresses).
