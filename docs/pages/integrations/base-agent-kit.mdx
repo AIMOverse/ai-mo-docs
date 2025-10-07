@@ -1,11 +1,15 @@
 # Coinbase AgentKit Integration Guide
 
 ## Overview
-This guide walks you through integrating Coinbase AgentKit into your on-chain agent application. You will:
-1. Scaffold a new project.
+This guide walks you through integrating Coinbase AgentKit into your Next.js on-chain agent application.
+
+**Example Repository**: [https://github.com/AIMOverse/base-agent-kit-example](https://github.com/AIMOverse/base-agent-kit-example)
+
+You will:
+1. Scaffold a new Next.js project with AgentKit.
 2. Collect required API credentials.
 3. Configure environment variables.
-4. Instantiate an agent with AgentKit.
+4. Instantiate an agent with AgentKit and AIMO API.
 5. Run the development server.
 
 ## Prerequisites
@@ -13,12 +17,9 @@ This guide walks you through integrating Coinbase AgentKit into your on-chain ag
 - `pnpm` installed
 - A Coinbase Developer Platform (CDP) account
 - Access to create API keys and a Smart Wallet (or Wallet-as-a-Service credentials)
-- An Aimo API key (if your platform uses Aimo for orchestration or LLM routing)
+- An AIMO API key for LLM routing via the AIMO network
 
-Optional:
-- OpenAI / Anthropic / Other LLM provider keys (if you plan multi-provider routing)
-
-## 1. Scaffold the Project
+## 1. Scaffold the Next.js Project
 
 Run the official AgentKit initializer:
 
@@ -26,7 +27,7 @@ Run the official AgentKit initializer:
 pnpm create onchain-agent@latest
 ```
 
-Follow the interactive prompts (choose JavaScript/TypeScript depending on preference). After completion, `cd` into the generated directory.
+Follow the interactive prompts and **select Next.js** as your framework. After completion, `cd` into the generated directory.
 
 ## 2. Collect Required API Keys
 
@@ -47,46 +48,46 @@ Security notes:
 - Prefer `.env.local` and secret managers in production.
 - Rotate keys regularly.
 
-## 3. Project Structure (Example)
+## 3. Project Structure (Next.js)
 
-After scaffolding, you might have something like:
+After scaffolding a Next.js project, you'll have:
 
 ```
 .
-├─ src/
-│  ├─ index.ts
-│  ├─ agent/
-│  │  └─ createAgent.ts
-│  ├─ tools/
-│  └─ config/
+├─ app/
+│  ├─ api/
+│  │  └─ agent/
+│  │     ├─ create-agent.ts
+│  │     ├─ prepare-agentkit.ts
+│  │     └─ route.ts
+│  ├─ page.tsx
+│  └─ layout.tsx
+├─ public/
 ├─ package.json
-├─ .env.example
-├─ README.md
+├─ .env.local
+├─ next.config.js
 └─ pnpm-lock.yaml
 ```
 
-If the scaffold didn’t create a dedicated `agent` folder, you can add one for clarity.
+The agent configuration lives in `app/api/agent/create-agent.ts`.
 
 ## 4. Configure Environment Variables
 
-Create a `.env` (or `.env.local`) in the project root:
+Create a `.env.local` file in the project root:
 
 ```
-# Core platform + orchestration
+# AIMO Network API
 AIMO_API_KEY=your_aimo_key_here
 
 # Coinbase Developer Platform
 CDP_API_KEY=your_cdp_key
 CDP_API_SECRET=your_cdp_secret
-CDP_PROJECT_ID=optional_if_required
 
-# Smart Wallet / Signing
-COINBASE_WALLET_SECRET=your_wallet_secret_or_private_key
-WALLET_ADDRESS=0xYourWalletAddress
+# Network configuration
+NETWORK_ID=base-sepolia
 
 # Runtime config
 NODE_ENV=development
-LOG_LEVEL=debug
 ```
 
 Add an `.env.example` (without real secrets) to help collaborators:
@@ -95,186 +96,161 @@ Add an `.env.example` (without real secrets) to help collaborators:
 AIMO_API_KEY=
 CDP_API_KEY=
 CDP_API_SECRET=
-CDP_PROJECT_ID=
-COINBASE_WALLET_SECRET=
-WALLET_ADDRESS=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+NETWORK_ID=base-sepolia
 NODE_ENV=development
-LOG_LEVEL=info
 ```
 
-## 5. Create / Modify the Agent Initialization
+## 5. Configure the Agent with AIMO API
 
-Below is a conceptual example using AgentKit + a basic LLM wrapper. Adjust per the actual API surface of `@coinbase/agentkit` (names may differ slightly depending on version):
+The core agent configuration happens in `app/api/agent/create-agent.ts`. This file uses the Vercel AI SDK with AIMO's OpenAI-compatible API:
 
-```
-// src/agent/createAgent.ts
-import { config } from 'dotenv';
-config();
+```typescript
+// app/api/agent/create-agent.ts
+import { createOpenAI } from "@ai-sdk/openai";
+import { getVercelAITools } from "@coinbase/agentkit-vercel-ai-sdk";
+import { prepareAgentkitAndWalletProvider } from "./prepare-agentkit";
 
-import { AgentRuntime } from '@coinbase/agentkit'; // Placeholder; use actual exported class/module
-import { buildTools } from './tools/buildTools';  // Your custom tool registry
-import { createLLMClient } from '../llm/createLLMClient'; // Abstraction over OpenAI/Anthropic/Aimo routing
+/**
+ * Agent Configuration Guide
+ *
+ * This file handles the core configuration of your AI agent's behavior and capabilities.
+ *
+ * Key Steps to Customize Your Agent:
+ *
+ * 1. Select your LLM:
+ *    - Modify the `openai` instantiation to choose your preferred LLM
+ *    - Configure model parameters like temperature and max tokens
+ *
+ * 2. Instantiate your Agent:
+ *    - Pass the LLM, tools, and memory into the agent configuration
+ *    - Configure agent-specific parameters
+ */
 
-interface AgentDependencies {
-  llm: ReturnType<typeof createLLMClient>;
-  tools: any[];
-  wallet: {
-    secret: string;
-    address: string;
-  };
-  cdp: {
-    apiKey: string;
-    apiSecret: string;
-    projectId?: string;
-  };
-}
-
-function loadEnvOrThrow(name: string): string {
-  const v = process.env[name];
-  if (!v) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return v;
-}
-
-export async function createAgent() {
-  const deps: AgentDependencies = {
-    llm: createLLMClient({
-      openaiKey: process.env.OPENAI_API_KEY,
-      anthropicKey: process.env.ANTHROPIC_API_KEY,
-      aimoKey: process.env.AIMO_API_KEY,
-      defaultProvider: 'openai',
-      model: 'gpt-4o-mini'
-    }),
-    tools: buildTools(),
-    wallet: {
-      secret: loadEnvOrThrow('COINBASE_WALLET_SECRET'),
-      address: loadEnvOrThrow('WALLET_ADDRESS'),
-    },
-    cdp: {
-      apiKey: loadEnvOrThrow('CDP_API_KEY'),
-      apiSecret: loadEnvOrThrow('CDP_API_SECRET'),
-      projectId: process.env.CDP_PROJECT_ID,
-    }
-  };
-
-  // Illustrative: Actual constructor/factory may differ
-  const agent = await AgentRuntime.initialize({
-    walletSecret: deps.wallet.secret,
-    walletAddress: deps.wallet.address,
-    cdp: {
-      apiKey: deps.cdp.apiKey,
-      apiSecret: deps.cdp.apiSecret,
-      projectId: deps.cdp.projectId
-    },
-    llm: deps.llm,
-    tools: deps.tools,
-    // Optional: pass logging, tracing, caching adapters
-    options: {
-      maxToolCalls: 8,
-      temperature: 0.4
-    }
-  });
-
-  return agent;
-}
-```
-
-If the real AgentKit exports differ, align the import names and constructor parameters accordingly (refer to the latest README/examples in the AgentKit repo).
-
-Example `src/index.ts` (entrypoint):
-
-```
-import { createAgent } from './agent/createAgent';
-
-async function main() {
-  const agent = await createAgent();
-
-  const userPrompt = process.argv.slice(2).join(' ') || 'Explain AgentKit basics.';
-  const stream = await agent.respond({
-    input: userPrompt,
-    metadata: { source: 'cli' }
-  });
-
-  // If streaming:
-  for await (const chunk of stream) {
-    process.stdout.write(chunk.content ?? '');
-  }
-
-  // Or if single response:
-  // const reply = await agent.respondOnce({ input: userPrompt });
-  // console.log(reply.output);
-}
-
-main().catch(err => {
-  console.error('Fatal error:', err);
-  process.exit(1);
+// Configure OpenAI-compatible client for AIMO API
+const openai = createOpenAI({
+  apiKey: process.env.AIMO_API_KEY,
+  baseURL: "https://devnet.aimo.network/api/v1"
 });
+
+// The agent configuration type
+type Agent = {
+  tools: ReturnType<typeof getVercelAITools>;
+  system: string;
+  model: ReturnType<typeof openai>;
+  maxSteps?: number;
+};
+let agent: Agent;
+
+/**
+ * Initializes and returns an instance of the AI agent.
+ * If an agent instance already exists, it returns the existing one.
+ *
+ * @function createAgent
+ * @returns {Promise<Agent>} The initialized AI agent configuration.
+ *
+ * @description Handles agent setup with AIMO API and AgentKit tools
+ *
+ * @throws {Error} If the agent initialization fails.
+ */
+export async function createAgent(): Promise<Agent> {
+  // If agent has already been initialized, return it
+  if (agent) {
+    return agent;
+  }
+
+  if (!process.env.AIMO_API_KEY) {
+    throw new Error("I need an AIMO_API_KEY in your .env.local file to power my intelligence.");
+  }
+
+  const { agentkit, walletProvider } = await prepareAgentkitAndWalletProvider();
+
+  try {
+    // Initialize LLM via AIMO network
+    // Format: model_id:model_name
+    const model = openai("HjRMtkc54ZNgq2PGCsiuhR1z4WR2YDTfA4PfW1GHXbLh:kimi-k2-0711-preview");
+
+    // Initialize Agent system prompt
+    const canUseFaucet = walletProvider.getNetwork().networkId == "base-sepolia";
+    const faucetMessage = `If you ever need funds, you can request them from the faucet.`;
+    const cantUseFaucetMessage = `If you need funds, you can provide your wallet details and request funds from the user.`;
+
+    const system = `
+        You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
+        empowered to interact onchain using your tools. ${canUseFaucet ? faucetMessage : cantUseFaucetMessage}.
+        Before executing your first action, get the wallet details to see what network
+        you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone
+        asks you to do something you can't do with your currently available tools, you must say so, and
+        explain that they can add more capabilities by adding more action providers to your AgentKit configuration.
+        ALWAYS include this link when mentioning missing capabilities, which will help them discover available action providers: https://github.com/coinbase/agentkit/tree/main/typescript/agentkit#action-providers
+        If users require more information regarding CDP or AgentKit, recommend they visit docs.cdp.coinbase.com for more information.
+        Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.
+        `;
+
+    // Get AgentKit tools for Vercel AI SDK
+    const tools = getVercelAITools(agentkit);
+
+    agent = {
+      tools,
+      system,
+      model,
+      maxSteps: 10,
+    };
+
+    return agent;
+  } catch (error) {
+    console.error("Error initializing agent:", error);
+    throw new Error("Failed to initialize agent");
+  }
+}
 ```
 
----
+### Key Configuration Points
+
+1. **OpenAI-Compatible API Setup**: The `createOpenAI` function is configured to use AIMO's API endpoint as a drop-in replacement for OpenAI
+2. **Environment Variable**: Uses `AIMO_API_KEY` instead of `OPENAI_API_KEY`
+3. **Model Format**: AIMO uses a `model_id:model_name` format for model selection
+4. **Base URL**: Points to `https://devnet.aimo.network/api/v1` for the AIMO devnet
 
 ## 6. Install Dependencies
 
-(If not already installed by the scaffold.)
+If not already installed by the scaffold:
 
-```
+```bash
 pnpm install
 ```
 
----
+## 7. Run the Next.js Development Server
 
-## 7. Run in Development
-
-```
+```bash
 pnpm dev
 ```
 
-Common alternatives:
-- `pnpm start` (if you compiled TypeScript first)
-- `pnpm build && pnpm start`
+The application will be available at `http://localhost:3000`.
 
----
+## 8. Test the Agent
 
-## 8. Test an Interaction
+Open your browser and navigate to `http://localhost:3000`. You can interact with the agent through the web interface.
 
-Example CLI run:
-
-```
-pnpm dev "What is my wallet address?"
-```
+Example interactions:
+- "What is my wallet address?"
+- "What network am I on?"
+- "Check my wallet balance"
 
 Expected behavior:
-- Logs showing env load + agent initialization.
-- Response referencing the wallet or on-chain context if tools are configured.
+- The agent initializes with AIMO API connection
+- AgentKit tools are available for on-chain interactions
+- Responses are generated via the AIMO network
 
----
+## 9. Understanding AgentKit Tools
 
-## 9. Adding Tools
+AgentKit provides built-in tools via `getVercelAITools(agentkit)` that enable on-chain operations:
 
-Create a simple tool registry:
+- **Wallet operations**: Get address, check balances
+- **Token transfers**: Send tokens to addresses
+- **Network queries**: Check network status and details
+- **Smart contract interactions**: Deploy and interact with contracts
 
-```
-// src/tools/buildTools.ts
-export function buildTools() {
-  return [
-    {
-      name: 'get_wallet_address',
-      description: 'Returns the configured wallet address',
-      run: async ({ context }: any) => {
-        return context.walletAddress;
-      }
-    },
-    // Add blockchain read tool, token price tool, transfer tool, etc.
-  ];
-}
-```
-
-Integrate actual blockchain read/write operations via AgentKit utilities or CDP APIs.
-
----
+These tools are automatically configured when you call `prepareAgentkitAndWalletProvider()` and are available to the agent based on your CDP credentials and wallet configuration.
 
 ## 10. Troubleshooting
 
@@ -286,8 +262,6 @@ Integrate actual blockchain read/write operations via AgentKit utilities or CDP 
 | Tool not found | Not exported / not in array | Confirm `buildTools()` returns it |
 | Slow responses | LLM latency | Enable streaming / caching |
 
----
-
 ## 11. Security Best Practices
 - Never log full secrets—mask them.
 - Use secret managers (AWS Secrets Manager, Vault) in staging/production.
@@ -295,15 +269,11 @@ Integrate actual blockchain read/write operations via AgentKit utilities or CDP 
 - Consider rate limiting and circuit breakers for LLM calls.
 - Add request tracing (e.g., OpenTelemetry) for observability.
 
----
-
 ## 12. Next Steps
 - Add persistence (conversation memory store).
 - Add more on-chain tools (transfer, balance check, swap).
 - Integrate cost tracking per interaction.
 - Implement evaluation harness for agent reliability.
-
----
 
 ## Quick Reference
 
@@ -321,7 +291,3 @@ pnpm dev
 # Example usage
 pnpm dev "Summarize the latest transaction."
 ```
-
----
-
-If you want this saved into your repo as a doc file, let me know the desired path (e.g., `ai-mo-docs/docs/agentkit-integration.md`) and I can add it. Just say the word. Would you like me to create this file now?
