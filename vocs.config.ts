@@ -179,6 +179,10 @@ export default defineConfig({
           text: "Solana Agent Kit",
           link: "/integrations/solana-agent-kit",
         },
+        {
+          text: "Base Agent Kit",
+          link: "/integrations/base-agent-kit",
+        },
       ],
     },
     {
