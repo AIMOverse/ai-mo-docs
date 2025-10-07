@@ -1,211 +1,239 @@
-# Coinbase AgentKit Integration Guide
+# Coinbase AgentKit + AiMo Integration
 
-## Overview
-This guide walks you through integrating Coinbase AgentKit into your on-chain agent application. You will:
-1. Scaffold a new project.
-2. Collect required API credentials.
-3. Configure environment variables.
-4. Instantiate an agent with AgentKit.
-5. Run the development server.
+Connect Coinbase AgentKit to AiMo Network to power your Base/multi-chain agents with decentralized LLM inference and routing.
+
+This guide shows you how to integrate AiMo as the LLM provider for an existing or new Coinbase AgentKit project.
+
+---
+
+## Why AiMo + Coinbase AgentKit?
+
+- **Decentralized inference**: Route LLM requests through AiMo's network instead of centralized providers
+- **Cost optimization**: Competitive pricing with automatic provider selection
+- **Model flexibility**: Access multiple models (Claude, GPT, Kimi, etc.) through a single interface
+- **Multi-chain support**: Combine AiMo's reasoning with AgentKit's Base, Ethereum, and other EVM chains
+
+---
 
 ## Prerequisites
-- Node.js 18+ (recommended LTS)
-- `pnpm` installed
-- A Coinbase Developer Platform (CDP) account
-- Access to create API keys and a Smart Wallet (or Wallet-as-a-Service credentials)
-- An Aimo API key (if your platform uses Aimo for orchestration or LLM routing)
 
-Optional:
-- OpenAI / Anthropic / Other LLM provider keys (if you plan multi-provider routing)
+- Existing Coinbase AgentKit project (or scaffold with `pnpm create onchain-agent@latest`)
+- AiMo API key ([get one here](https://aimo.network))
+- Coinbase Developer Platform (CDP) API credentials
+- Node.js 18+
 
-## 1. Scaffold the Project
+---
 
-Run the official AgentKit initializer:
+## 1. Add AiMo Environment Variables
 
-```
-pnpm create onchain-agent@latest
-```
+Add these to your `.env` file:
 
-Follow the interactive prompts (choose JavaScript/TypeScript depending on preference). After completion, `cd` into the generated directory.
+```bash
+# AiMo Network Configuration
+AIMO_API_KEY=your_aimo_api_key_here
+AIMO_BASE_URL=https://devnet.aimo.network/api/v1
+AIMO_MODEL=kimi-k2-0711-preview
 
-## 2. Collect Required API Keys
-
-You’ll need the following secrets before continuing:
-
-| Key | Description | Where to Get It |
-|-----|-------------|------------------|
-| AIMO_API_KEY | Aimo platform key (if integrating orchestration) | Aimo dashboard |
-| CDP_API_KEY | Coinbase Developer Platform key | CDP dashboard |
-| CDP_API_SECRET | Secret corresponding to the CDP API key | Shown once at creation |
-| CDP_PROJECT_ID (if applicable) | Some setups require explicit project id | CDP dashboard |
-| COINBASE_WALLET_SECRET (or SMART_WALLET_PRIVATE_KEY) | Smart wallet signing secret / private key | Wallet setup flow |
-| WALLET_ADDRESS | Associated public wallet address | Derived from wallet |
-| Optional: OPENAI_API_KEY / ANTHROPIC_API_KEY | LLM providers | Their dashboards |
-
-Security notes:
-- Never commit secrets to git.
-- Prefer `.env.local` and secret managers in production.
-- Rotate keys regularly.
-
-## 3. Project Structure (Example)
-
-After scaffolding, you might have something like:
-
-```
-.
-├─ src/
-│  ├─ index.ts
-│  ├─ agent/
-│  │  └─ createAgent.ts
-│  ├─ tools/
-│  └─ config/
-├─ package.json
-├─ .env.example
-├─ README.md
-└─ pnpm-lock.yaml
-```
-
-If the scaffold didn’t create a dedicated `agent` folder, you can add one for clarity.
-
-## 4. Configure Environment Variables
-
-Create a `.env` (or `.env.local`) in the project root:
-
-```
-# Core platform + orchestration
-AIMO_API_KEY=your_aimo_key_here
-
-# Coinbase Developer Platform
+# Your existing Coinbase AgentKit variables
 CDP_API_KEY=your_cdp_key
 CDP_API_SECRET=your_cdp_secret
-CDP_PROJECT_ID=optional_if_required
-
-# Smart Wallet / Signing
-COINBASE_WALLET_SECRET=your_wallet_secret_or_private_key
+COINBASE_WALLET_SECRET=your_wallet_secret
 WALLET_ADDRESS=0xYourWalletAddress
-
-# Runtime config
-NODE_ENV=development
-LOG_LEVEL=debug
+# ... other agent kit vars
 ```
 
-Add an `.env.example` (without real secrets) to help collaborators:
+Available models on AiMo:
+- `kimi-k2-0711-preview` (recommended for agents)
+- `claude-3-5-sonnet-20241022`
+- `gpt-4o-mini`
+- `gpt-4o`
 
-```
+Update `.env.example` (without real secrets):
+
+```bash
 AIMO_API_KEY=
+AIMO_BASE_URL=https://devnet.aimo.network/api/v1
+AIMO_MODEL=kimi-k2-0711-preview
 CDP_API_KEY=
 CDP_API_SECRET=
-CDP_PROJECT_ID=
 COINBASE_WALLET_SECRET=
 WALLET_ADDRESS=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-NODE_ENV=development
-LOG_LEVEL=info
 ```
 
-## 5. Create / Modify the Agent Initialization
+---
 
-Below is a conceptual example using AgentKit + a basic LLM wrapper. Adjust per the actual API surface of `@coinbase/agentkit` (names may differ slightly depending on version):
+## 2. Create the AiMo LLM Client
 
+Create `src/llm/createLLMClient.ts`:
+
+```typescript
+interface AimoMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  name?: string;
+}
+
+export function createLLMClient(config: {
+  aimoKey?: string;
+  aimoBaseUrl?: string;
+  aimoModel?: string;
+  openaiKey?: string;
+  anthropicKey?: string;
+  defaultProvider?: 'aimo' | 'openai' | 'anthropic';
+}) {
+  const provider = config.defaultProvider || 'aimo';
+
+  if (provider === 'aimo') {
+    if (!config.aimoKey || !config.aimoBaseUrl || !config.aimoModel) {
+      throw new Error('AiMo configuration requires: aimoKey, aimoBaseUrl, aimoModel');
+    }
+
+    return {
+      async chat(messages: AimoMessage[], options?: {
+        temperature?: number;
+        maxTokens?: number;
+      }) {
+        const response = await fetch(`${config.aimoBaseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.aimoKey}`,
+          },
+          body: JSON.stringify({
+            model: config.aimoModel,
+            messages,
+            temperature: options?.temperature ?? 0.4,
+            max_tokens: options?.maxTokens,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`AiMo API error (${response.status}): ${error}`);
+        }
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '';
+      },
+
+      async chatStream(messages: AimoMessage[], options?: {
+        temperature?: number;
+        maxTokens?: number;
+      }) {
+        const response = await fetch(`${config.aimoBaseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.aimoKey}`,
+          },
+          body: JSON.stringify({
+            model: config.aimoModel,
+            messages,
+            temperature: options?.temperature ?? 0.4,
+            max_tokens: options?.maxTokens,
+            stream: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`AiMo API error: ${response.status}`);
+        }
+
+        return response.body;
+      }
+    };
+  }
+
+  // Fallback to other providers if needed
+  throw new Error(`Provider ${provider} not implemented in this example`);
+}
 ```
-// src/agent/createAgent.ts
+
+---
+
+## 3. Integrate AiMo into AgentKit Initialization
+
+Update your agent creation (e.g., `src/agent/createAgent.ts`):
+
+```typescript
 import { config } from 'dotenv';
 config();
 
-import { AgentRuntime } from '@coinbase/agentkit'; // Placeholder; use actual exported class/module
-import { buildTools } from './tools/buildTools';  // Your custom tool registry
-import { createLLMClient } from '../llm/createLLMClient'; // Abstraction over OpenAI/Anthropic/Aimo routing
-
-interface AgentDependencies {
-  llm: ReturnType<typeof createLLMClient>;
-  tools: any[];
-  wallet: {
-    secret: string;
-    address: string;
-  };
-  cdp: {
-    apiKey: string;
-    apiSecret: string;
-    projectId?: string;
-  };
-}
+import { AgentRuntime } from '@coinbase/agentkit'; // Adjust import per actual AgentKit API
+import { createLLMClient } from '../llm/createLLMClient';
+import { buildTools } from '../tools/buildTools';
 
 function loadEnvOrThrow(name: string): string {
-  const v = process.env[name];
-  if (!v) {
+  const value = process.env[name];
+  if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
-  return v;
+  return value;
 }
 
 export async function createAgent() {
-  const deps: AgentDependencies = {
-    llm: createLLMClient({
-      openaiKey: process.env.OPENAI_API_KEY,
-      anthropicKey: process.env.ANTHROPIC_API_KEY,
-      aimoKey: process.env.AIMO_API_KEY,
-      defaultProvider: 'openai',
-      model: 'gpt-4o-mini'
-    }),
-    tools: buildTools(),
-    wallet: {
-      secret: loadEnvOrThrow('COINBASE_WALLET_SECRET'),
-      address: loadEnvOrThrow('WALLET_ADDRESS'),
-    },
+  // Initialize AiMo LLM client
+  const llmClient = createLLMClient({
+    aimoKey: loadEnvOrThrow('AIMO_API_KEY'),
+    aimoBaseUrl: loadEnvOrThrow('AIMO_BASE_URL'),
+    aimoModel: loadEnvOrThrow('AIMO_MODEL'),
+    defaultProvider: 'aimo',
+  });
+
+  // Initialize AgentKit with AiMo as the LLM provider
+  // Note: Actual API depends on AgentKit version - adapt as needed
+  const agent = await AgentRuntime.initialize({
+    walletSecret: loadEnvOrThrow('COINBASE_WALLET_SECRET'),
+    walletAddress: loadEnvOrThrow('WALLET_ADDRESS'),
     cdp: {
       apiKey: loadEnvOrThrow('CDP_API_KEY'),
       apiSecret: loadEnvOrThrow('CDP_API_SECRET'),
       projectId: process.env.CDP_PROJECT_ID,
-    }
-  };
-
-  // Illustrative: Actual constructor/factory may differ
-  const agent = await AgentRuntime.initialize({
-    walletSecret: deps.wallet.secret,
-    walletAddress: deps.wallet.address,
-    cdp: {
-      apiKey: deps.cdp.apiKey,
-      apiSecret: deps.cdp.apiSecret,
-      projectId: deps.cdp.projectId
     },
-    llm: deps.llm,
-    tools: deps.tools,
-    // Optional: pass logging, tracing, caching adapters
+    llm: llmClient, // Pass AiMo client here
+    tools: buildTools(),
     options: {
       maxToolCalls: 8,
-      temperature: 0.4
-    }
+      temperature: 0.4,
+    },
   });
 
-  return agent;
+  return { agent, llmClient };
 }
 ```
 
-If the real AgentKit exports differ, align the import names and constructor parameters accordingly (refer to the latest README/examples in the AgentKit repo).
+---
 
-Example `src/index.ts` (entrypoint):
+## 4. Create Your Agent Entrypoint
 
-```
+Example `src/index.ts`:
+
+```typescript
 import { createAgent } from './agent/createAgent';
 
 async function main() {
-  const agent = await createAgent();
+  const { agent, llmClient } = await createAgent();
 
-  const userPrompt = process.argv.slice(2).join(' ') || 'Explain AgentKit basics.';
-  const stream = await agent.respond({
-    input: userPrompt,
-    metadata: { source: 'cli' }
-  });
+  const userPrompt = process.argv.slice(2).join(' ') || 'What is my wallet address?';
+  
+  console.log('User:', userPrompt);
+  console.log('Agent thinking...\n');
 
-  // If streaming:
-  for await (const chunk of stream) {
-    process.stdout.write(chunk.content ?? '');
+  // If AgentKit supports streaming:
+  try {
+    const stream = await agent.respond({
+      input: userPrompt,
+      metadata: { source: 'cli' }
+    });
+
+    for await (const chunk of stream) {
+      process.stdout.write(chunk.content ?? '');
+    }
+    console.log('\n');
+  } catch (err) {
+    console.error('Agent error:', err);
+    process.exit(1);
   }
-
-  // Or if single response:
-  // const reply = await agent.respondOnce({ input: userPrompt });
-  // console.log(reply.output);
 }
 
 main().catch(err => {
@@ -216,112 +244,162 @@ main().catch(err => {
 
 ---
 
-## 6. Install Dependencies
+## 5. Add Basic Tools (Example)
 
-(If not already installed by the scaffold.)
+Create `src/tools/buildTools.ts`:
 
-```
-pnpm install
-```
-
----
-
-## 7. Run in Development
-
-```
-pnpm dev
-```
-
-Common alternatives:
-- `pnpm start` (if you compiled TypeScript first)
-- `pnpm build && pnpm start`
-
----
-
-## 8. Test an Interaction
-
-Example CLI run:
-
-```
-pnpm dev "What is my wallet address?"
-```
-
-Expected behavior:
-- Logs showing env load + agent initialization.
-- Response referencing the wallet or on-chain context if tools are configured.
-
----
-
-## 9. Adding Tools
-
-Create a simple tool registry:
-
-```
-// src/tools/buildTools.ts
+```typescript
 export function buildTools() {
   return [
     {
       name: 'get_wallet_address',
       description: 'Returns the configured wallet address',
       run: async ({ context }: any) => {
-        return context.walletAddress;
+        return {
+          address: context.walletAddress,
+          network: 'Base',
+        };
       }
     },
-    // Add blockchain read tool, token price tool, transfer tool, etc.
+    {
+      name: 'get_balance',
+      description: 'Gets ETH balance for the wallet',
+      run: async ({ context }: any) => {
+        // Implement using AgentKit's CDP utilities
+        // const balance = await context.cdp.getBalance(...);
+        return {
+          balance: '0.1 ETH', // Placeholder
+          address: context.walletAddress,
+        };
+      }
+    },
+    // Add more tools: transfer, swap, deploy contract, etc.
   ];
 }
 ```
 
-Integrate actual blockchain read/write operations via AgentKit utilities or CDP APIs.
-
 ---
 
-## 10. Troubleshooting
+## 6. Install Dependencies
 
-| Issue | Likely Cause | Remedy |
-|-------|--------------|--------|
-| Missing required env var error | Not set in `.env` | Add + restart |
-| Unauthorized (401) from CDP | Wrong API key/secret | Regenerate in CDP dashboard |
-| Wallet signing failure | Invalid private key format | Ensure hex string w/o whitespace |
-| Tool not found | Not exported / not in array | Confirm `buildTools()` returns it |
-| Slow responses | LLM latency | Enable streaming / caching |
-
----
-
-## 11. Security Best Practices
-- Never log full secrets—mask them.
-- Use secret managers (AWS Secrets Manager, Vault) in staging/production.
-- Set strict IAM scopes on CDP keys.
-- Consider rate limiting and circuit breakers for LLM calls.
-- Add request tracing (e.g., OpenTelemetry) for observability.
-
----
-
-## 12. Next Steps
-- Add persistence (conversation memory store).
-- Add more on-chain tools (transfer, balance check, swap).
-- Integrate cost tracking per interaction.
-- Implement evaluation harness for agent reliability.
-
----
-
-## Quick Reference
-
-```
-# Scaffold
-pnpm create onchain-agent@latest
-
-# Configure environment
-cp .env.example .env
-# Fill in required keys
-
-# Run dev
-pnpm dev
-
-# Example usage
-pnpm dev "Summarize the latest transaction."
+```bash
+pnpm install
 ```
 
 ---
 
-If you want this saved into your repo as a doc file, let me know the desired path (e.g., `ai-mo-docs/docs/agentkit-integration.md`) and I can add it. Just say the word. Would you like me to create this file now?
+## 7. Run Your Agent
+
+```bash
+# Development
+pnpm dev "What is my wallet address?"
+
+# Or if you need to build first
+pnpm build && pnpm start "What is my wallet address?"
+```
+
+---
+
+## 8. Test AiMo Integration
+
+Verify AiMo is handling requests:
+
+```typescript
+// test-aimo.ts
+import { config } from 'dotenv';
+config();
+
+import { createLLMClient } from './src/llm/createLLMClient';
+
+async function test() {
+  const client = createLLMClient({
+    aimoKey: process.env.AIMO_API_KEY!,
+    aimoBaseUrl: process.env.AIMO_BASE_URL!,
+    aimoModel: process.env.AIMO_MODEL!,
+    defaultProvider: 'aimo',
+  });
+
+  const response = await client.chat([
+    {
+      role: 'user',
+      content: 'Respond with "AiMo + AgentKit integration working" if you can read this.'
+    }
+  ]);
+
+  console.log('Response:', response);
+}
+
+test().catch(console.error);
+```
+
+Run:
+```bash
+npx ts-node test-aimo.ts
+```
+
+---
+
+## 9. Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `Missing required environment variable: AIMO_API_KEY` | Add `AIMO_API_KEY` to `.env` and restart |
+| `401 Unauthorized` from AiMo | Verify API key is correct |
+| `Model not found` | Check `AIMO_MODEL` matches available models (see section 1) |
+| `401 Unauthorized` from CDP | Check `CDP_API_KEY` and `CDP_API_SECRET` |
+| Wallet signing failure | Verify `COINBASE_WALLET_SECRET` format (hex string, no whitespace) |
+| Tool not found | Confirm `buildTools()` exports the tool |
+
+---
+
+## Example: Complete Agent with AiMo + AgentKit
+
+Minimal working example:
+
+```typescript
+// minimal-agent.ts
+import { config } from 'dotenv';
+config();
+
+import { createLLMClient } from './src/llm/createLLMClient';
+
+const llm = createLLMClient({
+  aimoKey: process.env.AIMO_API_KEY!,
+  aimoBaseUrl: process.env.AIMO_BASE_URL!,
+  aimoModel: process.env.AIMO_MODEL!,
+  defaultProvider: 'aimo',
+});
+
+async function simpleAgent(prompt: string) {
+  const response = await llm.chat([
+    {
+      role: 'system',
+      content: 'You are a helpful Base blockchain assistant. You can check balances and explain concepts.'
+    },
+    {
+      role: 'user',
+      content: prompt
+    }
+  ]);
+
+  console.log('Agent:', response);
+  return response;
+}
+
+// Test it
+simpleAgent('Explain what Base is in one sentence.').catch(console.error);
+```
+
+---
+
+## 10. Next Steps
+
+- **Add blockchain tools**: Integrate AgentKit's full tool suite (transfers, swaps, contract calls)
+- **Streaming responses**: Use `chatStream()` for real-time agent output
+- **Multi-chain**: Expand beyond Base to Ethereum, Polygon, etc.
+- **Cost tracking**: Monitor AiMo credit usage
+- **Production deployment**: See [AiMo deployment docs](/deployment)
+
+For full Coinbase AgentKit documentation, see:
+- [Coinbase AgentKit GitHub](https://github.com/coinbase/agentkit)
+- [CDP API Documentation](https://docs.cdp.coinbase.com/)
