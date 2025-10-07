@@ -1,4 +1,4 @@
-# Coinbase AgentKit Integration Guide
+# Coinbase AgentKit + AiMo Integration
 
 ## Overview
 This guide walks you through integrating Coinbase AgentKit into your Next.js on-chain agent application.
@@ -21,11 +21,9 @@ You will:
 
 ## 1. Scaffold the Next.js Project
 
-Run the official AgentKit initializer:
+## 1. Add AiMo Environment Variables
 
-```
-pnpm create onchain-agent@latest
-```
+Add these to your `.env` file:
 
 Follow the interactive prompts and **select Next.js** as your framework. After completion, `cd` into the generated directory.
 
@@ -90,10 +88,18 @@ NETWORK_ID=base-sepolia
 NODE_ENV=development
 ```
 
-Add an `.env.example` (without real secrets) to help collaborators:
+Available models on AiMo:
+- `kimi-k2-0711-preview` (recommended for agents)
+- `claude-3-5-sonnet-20241022`
+- `gpt-4o-mini`
+- `gpt-4o`
 
-```
+Update `.env.example` (without real secrets):
+
+```bash
 AIMO_API_KEY=
+AIMO_BASE_URL=https://devnet.aimo.network/api/v1
+AIMO_MODEL=kimi-k2-0711-preview
 CDP_API_KEY=
 CDP_API_SECRET=
 NETWORK_ID=base-sepolia
@@ -211,7 +217,7 @@ export async function createAgent(): Promise<Agent> {
 3. **Model Format**: AIMO uses a `model_id:model_name` format for model selection
 4. **Base URL**: Points to `https://devnet.aimo.network/api/v1` for the AIMO devnet
 
-## 6. Install Dependencies
+## 5. Add Basic Tools (Example)
 
 If not already installed by the scaffold:
 
@@ -252,7 +258,7 @@ AgentKit provides built-in tools via `getVercelAITools(agentkit)` that enable on
 
 These tools are automatically configured when you call `prepareAgentkitAndWalletProvider()` and are available to the agent based on your CDP credentials and wallet configuration.
 
-## 10. Troubleshooting
+## 6. Install Dependencies
 
 | Issue | Likely Cause | Remedy |
 |-------|--------------|--------|
