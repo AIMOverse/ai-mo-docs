@@ -21,25 +21,24 @@ You will:
 
 ## 1. Scaffold the Next.js Project
 
-## 1. Add AiMo Environment Variables
+Run the official AgentKit initializer:
 
-Add these to your `.env` file:
+```
+pnpm create onchain-agent@latest
+```
 
 Follow the interactive prompts and **select Next.js** as your framework. After completion, `cd` into the generated directory.
 
 ## 2. Collect Required API Keys
 
-You’ll need the following secrets before continuing:
+You'll need the following secrets before continuing:
 
 | Key | Description | Where to Get It |
 |-----|-------------|------------------|
-| AIMO_API_KEY | Aimo platform key (if integrating orchestration) | Aimo dashboard |
+| AIMO_API_KEY | Aimo platform key for LLM routing | Aimo dashboard |
 | CDP_API_KEY | Coinbase Developer Platform key | CDP dashboard |
 | CDP_API_SECRET | Secret corresponding to the CDP API key | Shown once at creation |
-| CDP_PROJECT_ID (if applicable) | Some setups require explicit project id | CDP dashboard |
-| COINBASE_WALLET_SECRET (or SMART_WALLET_PRIVATE_KEY) | Smart wallet signing secret / private key | Wallet setup flow |
-| WALLET_ADDRESS | Associated public wallet address | Derived from wallet |
-| Optional: OPENAI_API_KEY / ANTHROPIC_API_KEY | LLM providers | Their dashboards |
+| NETWORK_ID | Network to deploy on (e.g., base-sepolia) | Configuration choice |
 
 Security notes:
 - Never commit secrets to git.
@@ -73,7 +72,7 @@ The agent configuration lives in `app/api/agent/create-agent.ts`.
 
 Create a `.env.local` file in the project root:
 
-```
+```bash
 # AIMO Network API
 AIMO_API_KEY=your_aimo_key_here
 
@@ -88,18 +87,10 @@ NETWORK_ID=base-sepolia
 NODE_ENV=development
 ```
 
-Available models on AiMo:
-- `kimi-k2-0711-preview` (recommended for agents)
-- `claude-3-5-sonnet-20241022`
-- `gpt-4o-mini`
-- `gpt-4o`
-
-Update `.env.example` (without real secrets):
+Add an `.env.example` (without real secrets) to help collaborators:
 
 ```bash
 AIMO_API_KEY=
-AIMO_BASE_URL=https://devnet.aimo.network/api/v1
-AIMO_MODEL=kimi-k2-0711-preview
 CDP_API_KEY=
 CDP_API_SECRET=
 NETWORK_ID=base-sepolia
@@ -210,6 +201,10 @@ export async function createAgent(): Promise<Agent> {
 }
 ```
 
+:::info
+To view available models on AiMo, visit [https://aimo.network/marketplace](https://aimo.network/marketplace).
+:::
+
 ### Key Configuration Points
 
 1. **OpenAI-Compatible API Setup**: The `createOpenAI` function is configured to use AIMO's API endpoint as a drop-in replacement for OpenAI
@@ -217,7 +212,7 @@ export async function createAgent(): Promise<Agent> {
 3. **Model Format**: AIMO uses a `model_id:model_name` format for model selection
 4. **Base URL**: Points to `https://devnet.aimo.network/api/v1` for the AIMO devnet
 
-## 5. Add Basic Tools (Example)
+## 6. Install Dependencies
 
 If not already installed by the scaffold:
 
@@ -258,42 +253,63 @@ AgentKit provides built-in tools via `getVercelAITools(agentkit)` that enable on
 
 These tools are automatically configured when you call `prepareAgentkitAndWalletProvider()` and are available to the agent based on your CDP credentials and wallet configuration.
 
-## 6. Install Dependencies
+## 10. Troubleshooting
 
 | Issue | Likely Cause | Remedy |
 |-------|--------------|--------|
-| Missing required env var error | Not set in `.env` | Add + restart |
+| Missing required env var error | Not set in `.env.local` | Add key and restart |
 | Unauthorized (401) from CDP | Wrong API key/secret | Regenerate in CDP dashboard |
-| Wallet signing failure | Invalid private key format | Ensure hex string w/o whitespace |
-| Tool not found | Not exported / not in array | Confirm `buildTools()` returns it |
-| Slow responses | LLM latency | Enable streaming / caching |
+| Unauthorized (401) from AIMO | Wrong AIMO API key | Check AIMO dashboard |
+| Wallet signing failure | Invalid private key format | Ensure hex string without whitespace |
+| Tool not found | Tool not properly registered | Confirm AgentKit initialization |
+| Slow responses | LLM latency or network issues | Enable streaming / check network |
+| 5XX errors from AIMO | AIMO service issues | Retry later or contact support |
 
 ## 11. Security Best Practices
-- Never log full secrets—mask them.
-- Use secret managers (AWS Secrets Manager, Vault) in staging/production.
-- Set strict IAM scopes on CDP keys.
-- Consider rate limiting and circuit breakers for LLM calls.
-- Add request tracing (e.g., OpenTelemetry) for observability.
+
+- Never log full secrets—mask them in logs
+- Use secret managers (AWS Secrets Manager, Vault, Vercel Environment Variables) in staging/production
+- Set strict IAM scopes on CDP keys
+- Consider rate limiting and circuit breakers for LLM calls
+- Add request tracing (e.g., OpenTelemetry) for observability
+- Rotate API keys regularly
+- Use `.env.local` for local development (automatically ignored by git)
 
 ## 12. Next Steps
-- Add persistence (conversation memory store).
-- Add more on-chain tools (transfer, balance check, swap).
-- Integrate cost tracking per interaction.
-- Implement evaluation harness for agent reliability.
+
+- Add persistence (conversation memory store)
+- Add more on-chain tools (transfer, balance check, swap)
+- Integrate cost tracking per interaction
+- Implement evaluation harness for agent reliability
+- Deploy to production (Vercel, Railway, etc.)
+- Add monitoring and alerting
 
 ## Quick Reference
 
-```
+```bash
 # Scaffold
 pnpm create onchain-agent@latest
 
 # Configure environment
-cp .env.example .env
+cp .env.example .env.local
 # Fill in required keys
 
-# Run dev
+# Install dependencies
+pnpm install
+
+# Run development server
 pnpm dev
 
-# Example usage
-pnpm dev "Summarize the latest transaction."
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
 ```
+
+## Additional Resources
+
+- [Coinbase AgentKit Documentation](https://docs.cdp.coinbase.com)
+- [AgentKit GitHub Repository](https://github.com/coinbase/agentkit)
+- [AIMO Network Documentation](https://docs.aimo.network)
+- [Example Repository](https://github.com/AIMOverse/base-agent-kit-example)
