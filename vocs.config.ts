@@ -64,6 +64,10 @@ export default defineConfig({
           text: "Zero Completion Insurance",
           link: "/features/zero-completion-insurance",
         },
+        {
+          text: "Uptime Optimization",
+          link: "/features/uptime-optimization",
+        },
       ],
     },
     {
