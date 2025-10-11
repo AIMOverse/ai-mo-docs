@@ -1,0 +1,425 @@
+# X402 Payment Endpoint
+
+The X402 payment endpoint enables direct cryptocurrency payments for AI model inference without requiring pre-funded escrow accounts or API keys. Simply make requests and pay on-demand using blockchain transactions.
+
+## Overview
+
+This approach is ideal for:
+- **Pay-per-use scenarios** without account setup
+- **Blockchain-native applications** that prefer direct payments
+- **Decentralized integrations** requiring permissionless access
+- **Testing and experimentation** without pre-funding
+
+The easiest way to use X402 payments is with the official X402 SDK, which handles all payment flows automatically.
+
+## Endpoint Details
+
+**Path:** `/alpha/chat/completions`
+
+**Base URL:** `https://devnet.aimo.network/api`
+
+**Full Endpoint:** `POST https://devnet.aimo.network/api/alpha/chat/completions`
+
+**Supported Networks:**
+- **Solana Mainnet**: USDC payments
+- **Base Mainnet**: USDC payments
+
+## Quick Start with X402 SDK
+
+### Installation
+
+```bash
+npm install x402-fetch viem
+```
+
+### Basic Usage with Base
+
+```typescript
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { wrapFetchWithPayment } from "x402-fetch";
+import { base } from "viem/chains";
+
+// Create a wallet client
+const account = privateKeyToAccount("0xYourPrivateKey");
+const client = createWalletClient({
+  account,
+  transport: http(),
+  chain: base,
+});
+
+// Wrap the fetch function with payment handling
+const fetchWithPay = wrapFetchWithPayment(fetch, client);
+
+// Make a request - payment is handled automatically
+const response = await fetchWithPay("https://devnet.aimo.network/api/alpha/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "Df6Uz871M62ps3K9oEQuB6ZbJcuLV2AXmrLZ8uoFDutv:deepseek-r1",
+    messages: [
+      { role: "user", content: "Explain quantum computing" }
+    ],
+    max_tokens: 500
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+The `x402-fetch` SDK automatically:
+1. Detects 402 Payment Required responses
+2. Parses payment requirements
+3. Creates and signs the payment transaction
+4. Retries the request with payment proof
+5. Returns the final response
+
+### Streaming Responses
+
+The X402 SDK works seamlessly with streaming responses:
+
+```typescript
+const response = await fetchWithPay("https://devnet.aimo.network/api/alpha/chat/completions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    model: "Df6Uz871M62ps3K9oEQuB6ZbJcuLV2AXmrLZ8uoFDutv:deepseek-r1",
+    messages: [{ role: "user", content: "Tell me a story" }],
+    stream: true,
+    max_tokens: 500
+  })
+});
+
+// Process streaming response
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  process.stdout.write(chunk);
+}
+```
+
+### Advanced Configuration
+
+Customize the SDK behavior with options:
+
+```typescript
+const fetchWithPay = wrapFetchWithPayment(fetch, client, {
+  onPaymentRequired: (paymentInfo) => {
+    console.log('Payment required:', paymentInfo);
+  },
+  onPaymentSent: (txHash) => {
+    console.log('Payment sent:', txHash);
+  },
+  onError: (error) => {
+    console.error('Payment error:', error);
+  },
+  paymentTimeout: 120000, // 2 minutes in milliseconds
+});
+```
+
+## Request Format
+
+The X402 endpoint accepts the same request format as the standard chat completions endpoint:
+
+```json
+{
+  "model": "provider_pubkey:model_name",
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Your question here"}
+  ],
+  "stream": false,
+  "max_tokens": 500,
+  "temperature": 0.7,
+  "top_p": 1.0
+}
+```
+
+**Supported Parameters:**
+- `model` (required): Format is `provider_pubkey:model_name`
+- `messages` (required): Array of message objects with `role` and `content`
+- `stream`: Enable streaming responses (default: false)
+- `max_tokens`: Maximum tokens to generate
+- `temperature`: Sampling temperature (0.0 to 2.0)
+- `top_p`: Nucleus sampling parameter
+- All other standard OpenAI parameters
+
+## Network Selection
+
+The endpoint automatically selects the payment network based on your request or returns options for both networks. You can specify a preferred network:
+
+**Via Header:**
+```bash
+curl -X POST "https://devnet.aimo.network/api/v1/alpha/chat/completions" \
+  -H "X-Preferred-Network: solana" \
+  -H "Content-Type: application/json" \
+  -d '...'
+```
+
+**Supported values:** `solana`, `base`
+
+## Error Handling
+
+### Payment Expired
+
+If you don't complete payment within the time limit:
+
+```json
+{
+  "error": {
+    "message": "Payment request expired",
+    "type": "payment_expired",
+    "code": 402
+  }
+}
+```
+
+**Solution:** Start a new payment request.
+
+### Payment Verification Failed
+
+If the payment transaction cannot be verified:
+
+```json
+{
+  "error": {
+    "message": "Payment verification failed",
+    "type": "payment_verification_failed",
+    "code": 402
+  }
+}
+```
+
+**Possible causes:**
+- Transaction not yet confirmed on-chain
+- Incorrect payment amount
+- Payment sent to wrong address
+- Transaction signature invalid
+
+**Solution:** Wait for transaction confirmation and retry, or verify payment details.
+
+### Insufficient Payment
+
+If the payment amount is less than required:
+
+```json
+{
+  "error": {
+    "message": "Insufficient payment amount",
+    "type": "insufficient_payment",
+    "code": 402,
+    "details": {
+      "required": "0.05",
+      "received": "0.03"
+    }
+  }
+}
+```
+
+**Solution:** Submit the correct payment amount.
+
+## Best Practices
+
+### Transaction Confirmation
+
+Always wait for transaction confirmation before submitting payment proof:
+
+- **Solana**: Wait for "confirmed" or "finalized" commitment level
+- **Base**: Wait for at least 1 block confirmation
+
+### Payment Expiration
+
+Payment requests expire based on the `maxTimeoutSeconds` field (typically 300 seconds / 5 minutes). Plan your payment flow accordingly:
+
+1. Read the `maxTimeoutSeconds` value from the payment option
+2. Calculate expiration time and show a countdown to users
+3. Request a new payment if expired
+
+```typescript
+const solanaOption = paymentResponse.accepts.find(opt => opt.network === 'solana');
+const expiresAt = Date.now() + (solanaOption.maxTimeoutSeconds * 1000);
+console.log(`Payment must be completed by: ${new Date(expiresAt)}`);
+```
+
+### Gas Fees
+
+Factor in blockchain gas fees when displaying total costs to users:
+
+- **Solana**: Typically ~0.000005 SOL per transaction
+- **Base**: Variable based on network congestion
+
+### Error Recovery
+
+The X402 SDK handles errors automatically, but you can add custom error handling:
+
+```typescript
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { wrapFetchWithPayment } from "x402-fetch";
+import { base } from "viem/chains";
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+const client = createWalletClient({
+  account,
+  transport: http(),
+  chain: base,
+});
+
+const fetchWithPay = wrapFetchWithPayment(fetch, client, {
+  onError: async (error, retryCount) => {
+    console.error(`Payment error (attempt ${retryCount}):`, error);
+    
+    if (retryCount < 3) {
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      return true; // Continue retrying
+    }
+    
+    return false; // Stop retrying
+  }
+});
+
+try {
+  const response = await fetchWithPay("https://devnet.aimo.network/api/alpha/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "Df6Uz871M62ps3K9oEQuB6ZbJcuLV2AXmrLZ8uoFDutv:deepseek-r1",
+      messages: [{ role: "user", content: "Hello!" }],
+      max_tokens: 100
+    })
+  });
+  
+  const data = await response.json();
+  console.log(data);
+} catch (error) {
+  console.error("Request failed after retries:", error);
+}
+```
+
+## Manual X402 Flow (Advanced)
+
+For advanced users who need direct control, you can implement the X402 flow manually without the SDK.
+
+### Manual Request Flow
+
+1. Make initial request without payment
+2. Receive 402 response with payment options
+3. Create and submit payment transaction on your chosen network
+4. Retry request with `X-Payment: {network}:{transaction_signature}` header
+
+**Example 402 Response:**
+```json
+{
+    "error": "X-PAYMENT header is required",
+    "accepts": [
+        {
+            "network": "solana",
+            "maxAmountRequired": "123",
+            "payTo": "Ge3jkza5KRfXvaq3GELNLh6V1pjjdEKNpEdGXJgjjKUR",
+            "maxTimeoutSeconds": 300,
+            "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        },
+        {
+            "network": "base",
+            "maxAmountRequired": "123",
+            "payTo": "0xf59bcCde20a59d49Ab0384BEB8fd874D28C46dEB",
+            "maxTimeoutSeconds": 300,
+            "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+        }
+    ],
+    "x402Version": 1
+}
+```
+
+**Submit Payment Proof:**
+```bash
+curl -X POST "https://devnet.aimo.network/api/alpha/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "X-Payment: base:0x1a2b...transaction-hash...3c4d" \
+  -d '{...your request...}'
+```
+
+For full manual implementation details, refer to the [X402 Protocol Specification](https://x402.org).
+
+## Comparison with Standard Endpoint
+
+| Feature | X402 Endpoint | Standard Endpoint |
+|---------|--------------|-------------------|
+| Authentication | None required | API key required |
+| Account Setup | Not needed | Requires account |
+| Payment Method | Direct blockchain tx | Pre-funded escrow |
+| Payment Timing | Pay-per-request | Pre-funded balance |
+| Transaction Fees | Gas fees per request | Minimal (escrow) |
+| SDK Support | x402-fetch | OpenAI SDK compatible |
+| Best For | One-off requests, testing, decentralized apps | High-volume usage, production |
+
+## Security Considerations
+
+### Payment Verification
+
+All payments are verified on-chain before processing requests. The system:
+
+1. Checks transaction exists and is confirmed
+2. Verifies recipient address matches
+3. Confirms payment amount is sufficient
+4. Ensures payment_id hasn't been used before
+
+### Private Key Safety
+
+Never expose your private keys in your code:
+
+```typescript
+// ❌ DON'T: Hardcode private keys
+const account = privateKeyToAccount("0x1234567890abcdef...");
+
+// ✅ DO: Use environment variables
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+
+// ✅ DO: Use secure key management in production
+// For browser apps, use wallet connection libraries:
+// - Base/EVM: wagmi, ConnectKit, RainbowKit
+// - Solana: @solana/wallet-adapter
+```
+
+### Rate Limiting
+
+The X402 endpoint has rate limits to prevent abuse:
+
+- Maximum 10 pending payment requests per IP
+- Maximum 100 requests per hour per IP
+
+## SDK Resources
+
+- **X402 Fetch**: Official JavaScript/TypeScript SDK
+  - [GitHub Repository](https://github.com/x402/x402-fetch)
+  - [NPM Package](https://www.npmjs.com/package/x402-fetch)
+- **X402 Protocol**: [Official Documentation](https://x402.org)
+- **Examples**: Check the x402-fetch repository for complete usage examples
+
+## Support
+
+For issues with X402 payments:
+
+1. Check the [x402-fetch documentation](https://github.com/x402/x402-fetch) for SDK-specific help
+2. Review [Error Handling](/user-guide/error-handling) documentation
+3. Verify transaction on blockchain explorer:
+   - Solana: [Solscan](https://solscan.io) or [Solana Explorer](https://explorer.solana.com)
+   - Base: [Basescan](https://basescan.org)
+4. Join our [Discord server](https://discord.gg/G3zVrZDa5C) for community support
+5. Contact [support@aimo.network](mailto:support@aimo.network) for direct assistance
+
+## See Also
+
+- [Standard API Usage](/user-guide/api-usage) - Using the API with escrow accounts
+- [Payment and Billing](/user-guide/payments) - General payment information
+- [Authentication](/user-guide/authentication) - API key setup for standard endpoint
+- [Streaming](/user-guide/streaming) - Using streaming responses with X402
