@@ -1,0 +1,18 @@
+# API Reference
+
+AiMo Network’s request and response schemas are very similar to the OpenAI Chat API, with a few small differences. At a high level, AiMo Network normalizes the schema across models and providers so you only need to learn one.
+
+## Requests
+
+- Base URL: `https://devnet.aimo.network/api/v1`
+- Authenticate with `Authorization: Bearer <API_KEY>`
+- Default content type is `application/json`
+- `model` field always uses `provider_pubkey:model_name`
+- Optional tracing headers such as `X-Request-ID` are respected
+
+## Responses
+
+- Successful calls return JSON objects with `id`, `created`, and the `model` used
+- Result payloads surface `choices` (data), `usage` (token counters), and any `metadata`
+- Streaming endpoints emit Server-Sent Events terminating with `data: [DONE]`
+- Error objects include `error.type`, `error.message`, and align with standard HTTP status codes

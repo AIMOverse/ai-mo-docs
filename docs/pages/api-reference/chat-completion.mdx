@@ -1,0 +1,138 @@
+# Chat Completion
+
+Use the chat completion endpoint to drive multi-turn conversations, tool calls, or streaming assistants with stateful message histories.
+
+## Endpoint
+
+- **Base URL:** `https://devnet.aimo.network/api/v1`
+- `POST /chat/completions`
+- Requires `Authorization: Bearer <API_KEY>` header
+- Optional `X-Request-ID` to aid tracing and log correlation
+
+## Request Body
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `model` | string | Yes | `provider_pubkey:model_name` (e.g. `8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3`) |
+| `messages` | array | Yes | OpenAI-compatible role/content messages |
+| `tools` | array | No | Declares tool definitions the model may call |
+| `tool_choice` | string/object | No | Force a specific tool or allow the model to choose |
+| `temperature` | number | No | Float between 0 and 2; defaults to 0.7 |
+| `top_p` | number | No | Alternative to `temperature`; defaults to 1 |
+| `max_tokens` | integer | No | Caps completion length; provider default if omitted |
+| `stream` | boolean | No | Enables server-sent events response |
+| `metadata` | object | No | Arbitrary key/value pairs forwarded to logs |
+
+## Response
+
+- Returns `id`, `created`, and the selected `model`
+- `choices` array includes message text, tool calls, and finish reason
+- `usage` block reports input/output token counts
+- Streaming responses emit SSE `data:` payloads ending with `[DONE]`
+
+## Examples
+
+### Basic request
+
+```bash
+curl -X POST "https://devnet.aimo.network/api/v1/chat/completions" \
+  -H "Authorization: Bearer aimo-sk-dev-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
+    "messages": [
+      {"role": "user", "content": "Explain quantum computing in one paragraph."}
+    ],
+    "max_tokens": 250,
+    "temperature": 0.7
+  }'
+```
+
+**Sample response**
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1718822400,
+  "model": "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Quantum computing leverages..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 72,
+    "total_tokens": 87
+  }
+}
+```
+
+### Streaming in JavaScript
+
+```javascript
+const response = await fetch("https://devnet.aimo.network/api/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer aimo-sk-dev-your-api-key",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
+    messages: [
+      { role: "user", content: "Tell me about blockchain technology." }
+    ],
+    stream: true
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const chunk = decoder.decode(value);
+  console.log(chunk); // Each chunk is an SSE frame such as "data: {...}" or "data: [DONE]"
+}
+```
+
+### Python example
+
+```python
+import requests
+
+url = "https://devnet.aimo.network/api/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer aimo-sk-dev-your-api-key",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "8W7X1tGnWh9CXwnPD7wgke31Gdcqmex4LapJvQ2afBUq:deepseek-chat-v3",
+    "messages": [
+        {"role": "user", "content": "What is machine learning?"}
+    ],
+    "stream": False,
+    "max_tokens": 300
+}
+
+response = requests.post(url, headers=headers, json=payload, timeout=30)
+response.raise_for_status()
+print(response.json())
+```
+
+## Error Codes
+
+| HTTP Code | Meaning | Guidance |
+| --- | --- | --- |
+| 400 | Invalid payload | Verify schema and required fields |
+| 401 | Unauthorized | Check token scope and expiry |
+| 429 | Rate limit | Slow down or request higher quota |
+| 500 | Provider failure | Retry with backoff or failover |

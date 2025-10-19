@@ -87,7 +87,7 @@ export default defineConfig({
         },
         {
           text: "X402 Payments",
-          link: "/user-guide/x402-payments"
+          link: "/user-guide/x402-payments",
         },
         {
           text: "Payments",
@@ -190,6 +190,23 @@ export default defineConfig({
         {
           text: "Base Agent Kit",
           link: "/integrations/base-agent-kit",
+        },
+      ],
+    },
+    {
+      text: "API Reference",
+      items: [
+        {
+          text: "Overview",
+          link: "/api-reference",
+        },
+        {
+          text: "Chat Completion",
+          link: "/api-reference/chat-completion",
+        },
+        {
+          text: "List Models",
+          link: "/api-reference/list-models",
         },
       ],
     },

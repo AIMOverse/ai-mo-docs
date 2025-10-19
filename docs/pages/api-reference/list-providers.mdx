@@ -1,0 +1,27 @@
+# List Providers
+
+Discover the providers currently integrated with your account, along with their regions, SLAs, and capability coverage.
+
+## Endpoint
+
+- `GET /v1/providers`
+
+## Provider Object
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | string | Stable provider identifier |
+| `display_name` | string | Human-friendly label |
+| `regions` | array | ISO region codes supported |
+| `capabilities` | array | e.g. `chat`, `embedding`, `batch` |
+| `status` | string | `active`, `limited`, or `deprecated` |
+
+## Examples
+
+> Placeholder for basic fetch example and filtered query demonstrating capability selection.
+
+## Integration Notes
+
+- Track provider status for availability dashboards and alerting
+- Align region selection with data residency requirements
+- Review SLAs before routing production traffic

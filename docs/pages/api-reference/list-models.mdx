@@ -1,0 +1,68 @@
+# List Models
+
+Retrieve the roster of models you can call, including availability, cost tiers, and supported features.
+
+## Endpoint
+
+- **Base URL:** `https://devnet.aimo.network/api/v1`
+- `GET /models`
+- No pagination; all models returned in a single response
+
+## Sample Response
+
+```json
+{
+  "data": [
+    {
+      "name": "BAAI-bge-large-en-v1-5",
+      "display_name": "BAAI BGE Large EN v1.5 (Free)",
+      "providers": [
+        {
+          "id": "vTdFo728T1zRvBUGMYGfvvVBgewzvZDbpdXekVBMi7N",
+          "name": "akash-ml",
+          "pricing": {
+            "prompt": 0.0,
+            "completion": 0.0,
+            "image": null
+          }
+        }
+      ],
+      "context_length": 8192,
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      }
+    },
+    {
+      "name": "DeepSeek-R1-Distill-Qwen-32B",
+      "display_name": "DeepSeek R1 Distill Qwen 32B (Free)",
+      "providers": [
+        {
+          "id": "vTdFo728T1zRvBUGMYGfvvVBgewzvZDbpdXekVBMi7N",
+          "name": "akash-ml",
+          "pricing": {
+            "prompt": 0.0,
+            "completion": 0.0,
+            "image": null
+          }
+        }
+      ],
+      "context_length": 65536,
+      "architecture": {
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      }
+    }
+  ]
+}
+```
+
+**Model object fields**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | string | Model identifier used in API requests |
+| `display_name` | string | Human-readable label shown in UI |
+| `providers` | array | Provider objects exposing id, name, and pricing |
+| `context_length` | integer | Maximum number of tokens accepted per request |
+| `architecture` | object | `input_modalities` and `output_modalities`; tokenizer metadata planned |
